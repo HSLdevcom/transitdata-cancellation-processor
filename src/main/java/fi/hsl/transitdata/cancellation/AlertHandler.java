@@ -7,13 +7,19 @@ import fi.hsl.common.transitdata.RouteIdUtils;
 import fi.hsl.common.transitdata.TransitdataProperties;
 import fi.hsl.common.transitdata.TransitdataSchema;
 import fi.hsl.common.transitdata.proto.InternalMessages;
+
+import fi.hsl.transitdata.cancellation.domain.CancellationData;
+import fi.hsl.transitdata.cancellation.domain.Trip;
+
+import fi.hsl.transitdata.cancellation.util.BulletinUtils;
+import fi.hsl.transitdata.cancellation.util.GtfsUtils;
+import fi.hsl.transitdata.cancellation.util.TimeUtils;
+
 import org.apache.pulsar.client.api.*;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -35,14 +41,15 @@ public class AlertHandler implements IMessageHandler {
     }
     
     @Override
+    // TODO: Siirrä messageHandler luokkaan?
     public void handleMessage(final Message message) {
         try {
             List<CancellationData> cancellationDataList = new ArrayList<>();
             
             if (TransitdataSchema.hasProtobufSchema(message, TransitdataProperties.ProtobufSchema.TransitdataServiceAlert)) {
                 InternalMessages.ServiceAlert serviceAlert = InternalMessages.ServiceAlert.parseFrom(message.getData());
-                List<InternalMessages.Bulletin> massCancellations = filterBulletins(serviceAlert.getBulletinsList());
-                cancellationDataList = getCancellationData(massCancellations);
+                List<InternalMessages.Bulletin> massCancellations = BulletinUtils.filterMassCancellationsFromBulletins(serviceAlert.getBulletinsList());
+                cancellationDataList = parseCancellationDataFromBulletins(massCancellations);
             } else if (TransitdataSchema.hasProtobufSchema(message, TransitdataProperties.ProtobufSchema.InternalMessagesTripCancellation)) {
                 InternalMessages.TripCancellation tripCancellation = InternalMessages.TripCancellation.parseFrom(message.getData());
                 CancellationData data = new CancellationData(tripCancellation, message.getEventTime(), message.getKey(), -1);
@@ -61,18 +68,9 @@ public class AlertHandler implements IMessageHandler {
             ack(message.getMessageId());
         }
     }
-    
-    // We are interested in mass cancellations only. Other types of bulletins are filtered out.
-    List<InternalMessages.Bulletin> filterBulletins(List<InternalMessages.Bulletin> bulletins) {
-        return bulletins.stream().filter(
-                        bulletin ->
-                                bulletin.getImpact() == InternalMessages.Bulletin.Impact.CANCELLED &&
-                                        bulletin.getPriority() == InternalMessages.Bulletin.Priority.WARNING)
-                .collect(Collectors.toList());
-    }
-    
+
     @NotNull
-    private List<CancellationData> getCancellationData(List<InternalMessages.Bulletin> massCancellations) {
+    private List<CancellationData> parseCancellationDataFromBulletins(List<InternalMessages.Bulletin> massCancellations) {
         List<CancellationData> tripCancellations = massCancellations.stream().
                 flatMap(mc -> createTripCancellations(mc).stream()).collect(Collectors.toList());
         return tripCancellations;
@@ -86,7 +84,7 @@ public class AlertHandler implements IMessageHandler {
             InternalMessages.TripCancellation.Builder builder = InternalMessages.TripCancellation.newBuilder();
             long deviationCaseId = trip.getDeviationCaseId();
             builder.setDeviationCaseId(deviationCaseId);
-            builder.setRouteId(trip.routeName);
+            builder.setRouteId(trip.getRouteName());
             builder.setDirectionId(trip.getDirection());
             builder.setStartDate(trip.getOperatingDay());
             builder.setStartTime(trip.getStartTime());
@@ -100,11 +98,11 @@ public class AlertHandler implements IMessageHandler {
             builder.setDescription(null);
             builder.setCategory(null);
             builder.setSubCategory(null);
-    
+
             final InternalMessages.TripCancellation cancellation = builder.build();
             Date timestamp = trip.getAffectedDeparturesLastModified();
             
-            Optional<Long> epochTimestamp = toUtcEpochMs(timestamp.toString());
+            Optional<Long> epochTimestamp = TimeUtils.toUtcEpochMs(timestamp.toString());
             if (epochTimestamp.isEmpty()) {
                 log.error("Failed to parse epoch timestamp from resultset: {}", timestamp);
             } else {
@@ -115,99 +113,14 @@ public class AlertHandler implements IMessageHandler {
         
         return tripCancellations;
     }
-    
+
     List<Trip> findTrips() {
         // Input: id, pvm, alkuaika, loppuaika
         // Output: id, pvm, lähtöaika, suunta (0 ja 1, tai 1 ja 2)
         // GraphQL-haku, digitransitin api key secreteihin
         return new ArrayList<>();
     }
-    
-    class Trip {
-        long dvjId;
-        long deviationCaseId;
-        String routeName;
-        int direction;
-        String operatingDay;
-        String startTime;
-        String affectedDeparturesStatus;
-        String deviationCasesType;
-        
-        Date AffectedDeparturesLastModified;
-    
-        public long getDvjId() {
-            return dvjId;
-        }
-    
-        public void setDvjId(long dvjId) {
-            this.dvjId = dvjId;
-        }
-    
-        public long getDeviationCaseId() {
-            return deviationCaseId;
-        }
-    
-        public void setDeviationCaseId(long deviationCaseId) {
-            this.deviationCaseId = deviationCaseId;
-        }
-    
-        public String getRouteName() {
-            return routeName;
-        }
-    
-        public void setRouteName(String routeName) {
-            this.routeName = routeName;
-        }
-    
-        public int getDirection() {
-            return direction;
-        }
-    
-        public void setDirection(int direction) {
-            this.direction = direction;
-        }
-    
-        public String getOperatingDay() {
-            return operatingDay;
-        }
-    
-        public void setOperatingDay(String operatingDay) {
-            this.operatingDay = operatingDay;
-        }
-    
-        public String getStartTime() {
-            return startTime;
-        }
-    
-        public void setStartTime(String startTime) {
-            this.startTime = startTime;
-        }
-    
-        public String getAffectedDeparturesStatus() {
-            return affectedDeparturesStatus;
-        }
-    
-        public void setAffectedDeparturesStatus(String affectedDeparturesStatus) {
-            this.affectedDeparturesStatus = affectedDeparturesStatus;
-        }
-    
-        public String getDeviationCasesType() {
-            return deviationCasesType;
-        }
-    
-        public void setDeviationCasesType(String deviationCasesType) {
-            this.deviationCasesType = deviationCasesType;
-        }
-    
-        public Date getAffectedDeparturesLastModified() {
-            return AffectedDeparturesLastModified;
-        }
-    
-        public void setAffectedDeparturesLastModified(Date affectedDeparturesLastModified) {
-            AffectedDeparturesLastModified = affectedDeparturesLastModified;
-        }
-    }
-    
+
     // identical method is in many repos
     private void ack(MessageId received) {
         consumer.acknowledgeAsync(received)
@@ -232,10 +145,6 @@ public class AlertHandler implements IMessageHandler {
                 .collect(Collectors.toList());
     }
 
-    private static boolean bulletinAffectsAll(InternalMessages.Bulletin bulletin) {
-        return bulletin.getAffectsAllRoutes() || bulletin.getAffectsAllStops();
-    }
-
     static Optional<GtfsRealtime.Alert> createAlert(final InternalMessages.Bulletin bulletin, final boolean globalNoServiceAlerts) {
         Optional<GtfsRealtime.Alert> maybeAlert;
         try {
@@ -253,18 +162,18 @@ public class AlertHandler implements IMessageHandler {
 
             final GtfsRealtime.Alert.Builder builder = GtfsRealtime.Alert.newBuilder();
             builder.addActivePeriod(timeRange);
-            builder.setCause(toGtfsCause(bulletin.getCategory()));
-            builder.setEffect(getGtfsEffect(bulletin, globalNoServiceAlerts));
+            builder.setCause(GtfsUtils.toGtfsCause(bulletin.getCategory()));
+            builder.setEffect(GtfsUtils.getGtfsEffect(bulletin, globalNoServiceAlerts));
             if (bulletin.getTitlesCount() > 0) {
-                builder.setHeaderText(toGtfsTranslatedString(bulletin.getTitlesList()));
+                builder.setHeaderText(GtfsUtils.toGtfsTranslatedString(bulletin.getTitlesList()));
             }
             if (bulletin.getDescriptionsCount() > 0) {
-                builder.setDescriptionText(toGtfsTranslatedString(bulletin.getDescriptionsList()));
+                builder.setDescriptionText(GtfsUtils.toGtfsTranslatedString(bulletin.getDescriptionsList()));
             }
             if (bulletin.getUrlsCount() > 0) {
-                builder.setUrl(toGtfsTranslatedString(bulletin.getUrlsList()));
+                builder.setUrl(GtfsUtils.toGtfsTranslatedString(bulletin.getUrlsList()));
             }
-            final Optional<GtfsRealtime.Alert.SeverityLevel> maybeSeverityLevel = toGtfsSeverityLevel(bulletin.getPriority());
+            final Optional<GtfsRealtime.Alert.SeverityLevel> maybeSeverityLevel = GtfsUtils.toGtfsSeverityLevel(bulletin.getPriority());
             maybeSeverityLevel.ifPresent(builder::setSeverityLevel);
 
             Collection<GtfsRealtime.EntitySelector> entitySelectors = entitySelectorsForBulletin(bulletin);
@@ -291,7 +200,7 @@ public class AlertHandler implements IMessageHandler {
 
     static Collection<GtfsRealtime.EntitySelector> entitySelectorsForBulletin(final InternalMessages.Bulletin bulletin) {
         Set<GtfsRealtime.EntitySelector> selectors = new HashSet<>();
-        if (bulletinAffectsAll(bulletin)) {
+        if (BulletinUtils.bulletinAffectsAll(bulletin)) {
             log.debug("Bulletin {} affects all routes or stops", bulletin.getBulletinId());
 
             GtfsRealtime.EntitySelector agency = GtfsRealtime.EntitySelector.newBuilder()
@@ -318,6 +227,7 @@ public class AlertHandler implements IMessageHandler {
         return selectors;
     }
 
+    // TODO: Siirrä messageHandler luokkaan?
     private void sendPulsarMessage(final GtfsRealtime.FeedMessage feedMessage, long timestampMs) throws PulsarClientException {
         try {
             producer.newMessage().value(feedMessage.toByteArray())
@@ -335,141 +245,6 @@ public class AlertHandler implements IMessageHandler {
         }
     }
 
-    public static GtfsRealtime.Alert.Cause toGtfsCause(final InternalMessages.Category category) {
-        switch (category) {
-            case OTHER_DRIVER_ERROR:
-            case TOO_MANY_PASSENGERS:
-            case MISPARKED_VEHICLE:
-            case TEST:
-            case STATE_VISIT:
-            case TRACK_BLOCKED:
-            case EARLIER_DISRUPTION:
-            case OTHER:
-            case NO_TRAFFIC_DISRUPTION:
-            case TRAFFIC_JAM:
-            case PUBLIC_EVENT:
-            case STAFF_DEFICIT:
-            case DISTURBANCE:
-                return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-            case ITS_SYSTEM_ERROR:
-            case SWITCH_FAILURE:
-            case TECHNICAL_FAILURE:
-            case VEHICLE_BREAKDOWN:
-            case POWER_FAILURE:
-            case VEHICLE_DEFICIT:
-                return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
-            case STRIKE:
-                return GtfsRealtime.Alert.Cause.STRIKE;
-            case VEHICLE_OFF_THE_ROAD:
-            case TRAFFIC_ACCIDENT:
-            case ACCIDENT:
-                return GtfsRealtime.Alert.Cause.ACCIDENT;
-            case SEIZURE:
-            case MEDICAL_INCIDENT:
-                return GtfsRealtime.Alert.Cause.MEDICAL_EMERGENCY;
-            case WEATHER:
-            case WEATHER_CONDITIONS:
-                return GtfsRealtime.Alert.Cause.WEATHER;
-            case ROAD_MAINTENANCE:
-            case TRACK_MAINTENANCE:
-                return GtfsRealtime.Alert.Cause.MAINTENANCE;
-            case ROAD_CLOSED:
-            case ROAD_TRENCH:
-                return GtfsRealtime.Alert.Cause.CONSTRUCTION;
-            case ASSAULT:
-                return GtfsRealtime.Alert.Cause.POLICE_ACTIVITY;
-            default:
-                return GtfsRealtime.Alert.Cause.UNKNOWN_CAUSE;
-        }
-    }
-
-    public static GtfsRealtime.Alert.Effect getGtfsEffect(final InternalMessages.Bulletin bulletin, final boolean globalNoServiceAlerts) {
-        final boolean affectsAll = bulletinAffectsAll(bulletin);
-        final InternalMessages.Bulletin.Impact impact = bulletin.getImpact();
-
-        final GtfsRealtime.Alert.Effect effect = toGtfsEffect(impact);
-        if (effect == GtfsRealtime.Alert.Effect.NO_SERVICE && affectsAll && !globalNoServiceAlerts) {
-            //If the bulletin affects all traffic (i.e. entity selector list contains agency), we don't want to use NO_SERVICE effect, because otherwise Google and others will display all traffic as cancelled
-            return GtfsRealtime.Alert.Effect.REDUCED_SERVICE;
-        }
-
-        return effect;
-    }
-
-    public static GtfsRealtime.Alert.Effect toGtfsEffect(final InternalMessages.Bulletin.Impact impact) {
-        switch (impact) {
-            case CANCELLED:
-                return GtfsRealtime.Alert.Effect.NO_SERVICE;
-            case DELAYED:
-            case IRREGULAR_DEPARTURES:
-                return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
-            case DEVIATING_SCHEDULE:
-            case POSSIBLE_DEVIATIONS:
-                return GtfsRealtime.Alert.Effect.MODIFIED_SERVICE;
-            case DISRUPTION_ROUTE:
-                return GtfsRealtime.Alert.Effect.DETOUR;
-            case POSSIBLY_DELAYED:
-            case VENDING_MACHINE_OUT_OF_ORDER:
-            case RETURNING_TO_NORMAL:
-            case OTHER:
-                return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
-            case REDUCED_TRANSPORT:
-                return GtfsRealtime.Alert.Effect.REDUCED_SERVICE;
-            case NO_TRAFFIC_IMPACT:
-                return GtfsRealtime.Alert.Effect.NO_EFFECT;
-            default:
-                return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
-        }
-    }
-
-    public static Optional<GtfsRealtime.Alert.SeverityLevel> toGtfsSeverityLevel(final InternalMessages.Bulletin.Priority priority) {
-        switch (priority) {
-            case INFO: return Optional.of(GtfsRealtime.Alert.SeverityLevel.INFO);
-            case WARNING: return Optional.of(GtfsRealtime.Alert.SeverityLevel.WARNING);
-            case SEVERE: return Optional.of(GtfsRealtime.Alert.SeverityLevel.SEVERE);
-            default: return Optional.empty();
-        }
-    }
-
-    public static GtfsRealtime.TranslatedString toGtfsTranslatedString(final List<InternalMessages.Bulletin.Translation> translations) {
-        GtfsRealtime.TranslatedString.Builder builder = GtfsRealtime.TranslatedString.newBuilder();
-        for (final InternalMessages.Bulletin.Translation translation: translations) {
-            GtfsRealtime.TranslatedString.Translation gtfsTranslation = GtfsRealtime.TranslatedString.Translation.newBuilder()
-                    .setText(translation.getText())
-                    .setLanguage(translation.getLanguage())
-                    .build();
-            builder.addTranslation(gtfsTranslation);
-        }
-        return builder.build();
-    }
-    
-    // This method is copied from transitdata-omm-cancellation-source
-    static class CancellationData {
-        public final InternalMessages.TripCancellation payload;
-        public final long timestampEpochMs;
-        public final String dvjId;
-        public final long deviationCaseId;
-        
-        public CancellationData(InternalMessages.TripCancellation payload, long timestampEpochMs, String dvjId, long deviationCaseId) {
-            this.payload = payload;
-            this.timestampEpochMs = timestampEpochMs;
-            this.dvjId = dvjId;
-            this.deviationCaseId = deviationCaseId;
-        }
-        
-        public String getDvjId() {
-            return dvjId;
-        }
-        
-        public InternalMessages.TripCancellation getPayload() {
-            return payload;
-        }
-        
-        public long getTimestamp() {
-            return timestampEpochMs;
-        }
-    }
-    
     // This method is copied from transitdata-omm-cancellation-source
     private void sendCancellations(List<CancellationData> cancellations) throws PulsarClientException {
         for (CancellationData data: cancellations) {
@@ -478,6 +253,7 @@ public class AlertHandler implements IMessageHandler {
     }
     
     // This method is copied from transitdata-omm-cancellation-source
+    // TODO: Siirrä messageHandler luokkaan?
     private void sendPulsarMessage(InternalMessages.TripCancellation tripCancellation, long timestamp, String dvjId) throws PulsarClientException {
         try {
             producer.newMessage().value(tripCancellation.toByteArray())
@@ -499,26 +275,5 @@ public class AlertHandler implements IMessageHandler {
             log.error("Failed to handle cancellation message", e);
         }
     }
-    
-    // This method is copied from transitdata-omm-cancellation-source
-    public Optional<Long> toUtcEpochMs(String localTimestamp) {
-        return toUtcEpochMs(localTimestamp, "timeZone");
-    }
-    
-    // This method is copied from transitdata-omm-cancellation-source
-    public static Optional<Long> toUtcEpochMs(String localTimestamp, String zoneId) {
-        if (localTimestamp == null || localTimestamp.isEmpty())
-            return Optional.empty();
-        
-        try {
-            LocalDateTime dt = LocalDateTime.parse(localTimestamp.replace(" ", "T")); // Make java.sql.Timestamp ISO compatible
-            ZoneId zone = ZoneId.of(zoneId);
-            long epochMs = dt.atZone(zone).toInstant().toEpochMilli();
-            return Optional.of(epochMs);
-        }
-        catch (Exception e) {
-            log.error("Failed to parse datetime from " + localTimestamp, e);
-            return Optional.empty();
-        }
-    }
+
 }

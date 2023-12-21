@@ -20,6 +20,7 @@ import static io.smallrye.graphql.client.core.Operation.operation;
  * https://smallrye.io/smallrye-graphql/latest/
  */
 
+@Deprecated(forRemoval = true)
 public class SmallryeGraphqlClient {
     
     public List<Route> getRoutes(String date, List<String> routeIds) {

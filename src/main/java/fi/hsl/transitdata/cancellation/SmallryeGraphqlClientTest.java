@@ -5,6 +5,7 @@ import fi.hsl.transitdata.cancellation.schema.Route;
 import java.util.Arrays;
 import java.util.List;
 
+@Deprecated(forRemoval = true)
 public class SmallryeGraphqlClientTest {
     
     public static void main(String args[]) {
