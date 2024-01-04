@@ -1,7 +1,9 @@
 package fi.hsl.transitdata.cancellation.util;
 
 import fi.hsl.common.transitdata.proto.InternalMessages;
+import fi.hsl.transitdata.cancellation.domain.CancellationData;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,8 +16,69 @@ public class BulletinUtils {
                                         bulletin.getPriority() == InternalMessages.Bulletin.Priority.WARNING)
                 .collect(Collectors.toList());
     }
-
-    public static boolean bulletinAffectsAll(InternalMessages.Bulletin bulletin) {
-        return bulletin.getAffectsAllRoutes() || bulletin.getAffectsAllStops();
+    
+    public static List<CancellationData> parseCancellationDataFromBulletins(List<InternalMessages.Bulletin> massCancellations) {
+        List<CancellationData> tripCancellations = massCancellations.stream().
+                flatMap(mc -> createTripCancellations(mc).stream()).collect(Collectors.toList());
+        return tripCancellations;
+    }
+    
+    // One cancellation contains one trip
+    // A route consists of many trips
+    private static List<CancellationData> createTripCancellations(InternalMessages.Bulletin massCancellation) {
+        // TODO: this implementation is not final
+        List<CancellationData> tripCancellations = new ArrayList<>();
+        
+        massCancellation.getValidFromUtcMs();
+        massCancellation.getValidToUtcMs();
+        
+        List<String> routeIds = massCancellation.getAffectedRoutesList().stream().
+                map(x -> x.getEntityId()).collect(Collectors.toList());
+        /*
+        for (InternalMessages.Bulletin.AffectedEntity route : massCancellation.getAffectedRoutesList()) {
+            //route.getEntityId()
+            route.
+        }
+        */
+        for (InternalMessages.TripInfo trip : TripUtils.getTripInfos("20240102", routeIds, "")) {
+            InternalMessages.TripCancellation.Builder builder = InternalMessages.TripCancellation.newBuilder();
+            long deviationCaseId = 0;
+            //long deviationCaseId = trip.getDeviationCaseId();
+            //builder.setDeviationCaseId(deviationCaseId);
+            builder.setRouteId(trip.getRouteId());
+            builder.setDirectionId(trip.getDirectionId());
+            builder.setStartDate(trip.getOperatingDay());
+            builder.setStartTime(trip.getStartTime());
+            builder.setStatus(InternalMessages.TripCancellation.Status.RUNNING);
+            builder.setSchemaVersion(builder.getSchemaVersion());
+            String dvjId = trip.getTripId();
+            //String dvjId = Long.toString(trip.getDvjId());
+            builder.setTripId(dvjId); // Ei ehkä tarvita, ehkä joku muu id cacheen
+            //builder.setDeviationCasesType(InternalMessages.TripCancellation.DeviationCasesType.valueOf(trip.getDeviationCasesType()));
+            //builder.setAffectedDeparturesType(null);
+            //builder.setTitle(null);
+            //builder.setDescription(null);
+            //builder.setCategory(null);
+            //builder.setSubCategory(null);
+            
+            final InternalMessages.TripCancellation cancellation = builder.build();
+            /*
+            //Date timestamp = trip.getAffectedDeparturesLastModified();
+            Date timestamp = new Date();
+            
+            Optional<Long> epochTimestamp = TimeUtils.toUtcEpochMs(timestamp.toString());
+            if (epochTimestamp.isEmpty()) {
+                throw new RuntimeException("Failed to parse epoch timestamp from resultset: " + timestamp);
+                //log.error("Failed to parse epoch timestamp from resultset: {}", timestamp);
+            } else {
+                CancellationData data = new CancellationData(cancellation, epochTimestamp.get(), dvjId, deviationCaseId);
+                tripCancellations.add(data);
+            }
+             */
+            CancellationData data = new CancellationData(cancellation, 0, dvjId, deviationCaseId);
+            tripCancellations.add(data);
+        }
+        
+        return tripCancellations;
     }
 }

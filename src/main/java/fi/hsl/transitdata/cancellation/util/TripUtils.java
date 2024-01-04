@@ -1,5 +1,6 @@
-package fi.hsl.transitdata.cancellation;
+package fi.hsl.transitdata.cancellation.util;
 
+import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.cancellation.schema.Route;
 import io.smallrye.graphql.client.Response;
 import io.smallrye.graphql.client.core.Document;
@@ -16,19 +17,14 @@ import static io.smallrye.graphql.client.core.Document.document;
 import static io.smallrye.graphql.client.core.Field.field;
 import static io.smallrye.graphql.client.core.Operation.operation;
 
-/**
- * https://smallrye.io/smallrye-graphql/latest/
- */
-
-@Deprecated(forRemoval = true)
-public class SmallryeGraphqlClient {
+public class TripUtils {
     
-    public List<Route> getRoutes(String date, List<String> routeIds) {
+    public static List<Route> getRoutes(String date, List<String> routeIds, String digitransitDeveloperApiUri) {
         List<Route> routes = new ArrayList<>();
         Vertx vertx = Vertx.vertx();
         
         DynamicGraphQLClient client = new VertxDynamicGraphQLClientBuilder()
-                .url("https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql?digitransit-subscription-key=a1e437f79628464c9ea8d542db6f6e94")
+                .url(digitransitDeveloperApiUri)
                 .vertx(vertx)
                 .build();
         
@@ -50,7 +46,7 @@ public class SmallryeGraphqlClient {
                         )
                 )
         ));
-    
+        
         Response response = null; // <2>
         try {
             response = client.executeSync(document);
@@ -65,7 +61,14 @@ public class SmallryeGraphqlClient {
                 throw new RuntimeException("Failed to close DynamicGraphQLClient", e);
             }
         }
-    
+        
         return routes;
+    }
+    
+    public static List<InternalMessages.TripInfo> getTripInfos(String date, List<String> routeIds, String digitransitDeveloperApiUri) {
+        // Input: reitti-id, pvm, alkuaika, loppuaika
+        // Output: reitti-id, pvm, lähtöaika, suunta (0 ja 1, tai 1 ja 2)
+        // GraphQL-haku, digitransitin api key secreteihin
+        return null;
     }
 }
