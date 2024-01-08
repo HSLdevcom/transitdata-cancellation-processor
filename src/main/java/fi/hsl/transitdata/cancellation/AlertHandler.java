@@ -41,7 +41,7 @@ public class AlertHandler implements IMessageHandler {
             if (TransitdataSchema.hasProtobufSchema(message, TransitdataProperties.ProtobufSchema.TransitdataServiceAlert)) {
                 InternalMessages.ServiceAlert serviceAlert = InternalMessages.ServiceAlert.parseFrom(message.getData());
                 List<InternalMessages.Bulletin> massCancellations = BulletinUtils.filterMassCancellationsFromBulletins(serviceAlert.getBulletinsList());
-                cancellationDataList = BulletinUtils.parseCancellationDataFromBulletins(massCancellations);
+                cancellationDataList = BulletinUtils.parseCancellationDataFromBulletins(massCancellations, digitransitDeveloperApiUri);
             } else if (TransitdataSchema.hasProtobufSchema(message, TransitdataProperties.ProtobufSchema.InternalMessagesTripCancellation)) {
                 InternalMessages.TripCancellation tripCancellation = InternalMessages.TripCancellation.parseFrom(message.getData());
                 CancellationData data = new CancellationData(tripCancellation, message.getEventTime(), message.getKey(), -1);

@@ -13,7 +13,7 @@ public class TimeUtilsTest {
     
     private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     
-    private static Date getTestDate(String dateAsString) {
+    public static Date getTestDate(String dateAsString) {
         Date date;
         try {
             date = DATE_FORMATTER.parse(dateAsString);
@@ -103,5 +103,15 @@ public class TimeUtilsTest {
         
         RuntimeException thrown = assertThrows(RuntimeException.class, () -> TimeUtils.getDates(validFrom, validTo));
         assertTrue(thrown.getMessage().equals("validFrom is after validTo"));
+    }
+    
+    @Test
+    public void getDate() {
+        String dateAsString = "20240108";
+        String timeAsString = "1020";
+        
+        Date outputDate = TimeUtils.getDate(dateAsString, timeAsString);
+        
+        assertEquals("2024-01-08 10:20:00", DATE_FORMATTER.format(outputDate));
     }
 }

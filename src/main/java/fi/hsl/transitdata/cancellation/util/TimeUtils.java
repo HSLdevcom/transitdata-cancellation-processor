@@ -3,6 +3,7 @@ package fi.hsl.transitdata.cancellation.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -12,7 +13,8 @@ public class TimeUtils {
 
     private static final Logger log = LoggerFactory.getLogger(TimeUtils.class);
     
-    private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
+    private static final SimpleDateFormat SHORT_DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
+    private static final SimpleDateFormat LONG_DATE_FORMAT = new SimpleDateFormat("yyyyMMdd HHmm");
     
     // This methods is copied from transitdata-omm-cancellation-source
     public static Optional<Long> toUtcEpochMs(String localTimestamp) {
@@ -74,7 +76,7 @@ public class TimeUtils {
     
     // Return date as format 'YYYYMMDD', for example '20240102'
     private static String getDateAsString(Date someDate) {
-        return SIMPLE_DATE_FORMAT.format(someDate);
+        return SHORT_DATE_FORMAT.format(someDate);
     }
     
     private static Date getNextDate(Date someDate) {
@@ -82,5 +84,22 @@ public class TimeUtils {
         c.setTime(someDate);
         c.add(Calendar.DATE, 1);
         return c.getTime();
+    }
+    
+    /**
+     * Returns date object
+     * @param dateAsString date as format 'YYYYMMDD'
+     * @param timeAsString time as format 'HHMM'
+     * @return
+     */
+    static Date getDate(String dateAsString, String timeAsString) {
+        String timestampAsString = dateAsString + " " + timeAsString;
+        Date outputDate;
+        try {
+            outputDate = LONG_DATE_FORMAT.parse(timestampAsString);
+        } catch (ParseException e) {
+            throw new RuntimeException("Failed to parse date '" + timestampAsString + "'", e);
+        }
+        return outputDate;
     }
 }

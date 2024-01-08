@@ -7,11 +7,14 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 
 public class BulletinUtilsTest {
     @Test
@@ -64,18 +67,13 @@ public class BulletinUtilsTest {
     @Test
     public void parseCancellationDataFromBulletins() {
         try (MockedStatic<TripUtils> tripUtils = Mockito.mockStatic(TripUtils.class)) {
-            List<String> routeIds = new ArrayList<>();
-            routeIds.add("HSL:4611");
-            routeIds.add("HSL:1079");
             
             List<InternalMessages.TripInfo> trips = new ArrayList<>();
-            trips.add(createTripInfo("HSL:4611", "HSL:4611_20240102_Ti_2_1415", "20240102", "1415", 1));
-            trips.add(createTripInfo("HSL:4611", "HSL:4611_20240102_Ti_2_1515", "20240102", "1515", 1));
-            trips.add(createTripInfo("HSL:1079", "HSL:1079_20240102_La_1_0734", "20240102", "0734", 2));
+            trips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240102_Ti_2_1415", "20240102", "1415", 1));
+            trips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240102_Ti_2_1515", "20240102", "1515", 1));
+            trips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240102_La_1_0734", "20240102", "0734", 2));
             
-            //tripUtils.when(() -> TripUtils.getTrips("", routeIds, "")).thenReturn(trips);
-            //tripUtils.when(() -> TripUtils.getTrips("", new ArrayList<>(), "")).thenReturn(trips);
-            tripUtils.when(() -> TripUtils.getTripInfos("20240102", routeIds, "")).thenReturn(trips);
+            tripUtils.when(() -> TripUtils.getTripInfos(any(List.class), any(Date.class), any(Date.class), anyString())).thenReturn(trips);
             
             InternalMessages.Bulletin bulletinMassCancellation = createBulletin(
                     InternalMessages.Bulletin.Impact.CANCELLED,
@@ -85,7 +83,7 @@ public class BulletinUtilsTest {
             List<InternalMessages.Bulletin> inputBulletins = new ArrayList<>();
             inputBulletins.add(bulletinMassCancellation);
             
-            List<CancellationData> cancellationData = BulletinUtils.parseCancellationDataFromBulletins(inputBulletins);
+            List<CancellationData> cancellationData = BulletinUtils.parseCancellationDataFromBulletins(inputBulletins, "");
             assertEquals(3, cancellationData.size());
             assertEquals("HSL:4611", cancellationData.get(0).getPayload().getRouteId());
             assertEquals("HSL:4611", cancellationData.get(1).getPayload().getRouteId());
@@ -114,16 +112,5 @@ public class BulletinUtilsTest {
                 .build();
         
         return bulletin;
-    }
-    
-    private static InternalMessages.TripInfo createTripInfo(
-            String routeId, String tripId, String operationDay, String startTime, int directionId) {
-        InternalMessages.TripInfo.Builder builder = InternalMessages.TripInfo.newBuilder();
-        builder.setRouteId(routeId);
-        builder.setTripId(tripId);
-        builder.setOperatingDay(operationDay);
-        builder.setStartTime(startTime);
-        builder.setDirectionId(directionId);
-        return builder.build();
     }
 }
