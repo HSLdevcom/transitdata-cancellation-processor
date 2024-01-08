@@ -6,8 +6,8 @@ import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -73,7 +73,8 @@ public class BulletinUtilsTest {
             trips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240102_Ti_2_1515", "20240102", "1515", 1));
             trips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240102_La_1_0734", "20240102", "0734", 2));
             
-            tripUtils.when(() -> TripUtils.getTripInfos(any(List.class), any(Date.class), any(Date.class), anyString())).thenReturn(trips);
+            tripUtils.when(() -> TripUtils.getTripInfos(
+                    any(List.class), any(LocalDateTime.class), any(LocalDateTime.class), anyString())).thenReturn(trips);
             
             InternalMessages.Bulletin bulletinMassCancellation = createBulletin(
                     InternalMessages.Bulletin.Impact.CANCELLED,

@@ -9,8 +9,8 @@ import io.smallrye.graphql.client.dynamic.api.DynamicGraphQLClient;
 import io.smallrye.graphql.client.vertx.dynamic.VertxDynamicGraphQLClientBuilder;
 import io.vertx.core.Vertx;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -68,7 +68,8 @@ public class TripUtils {
         return routes;
     }
     
-    public static List<InternalMessages.TripInfo> getTripInfos(List<String> routeIds, Date validFrom, Date validTo, String digitransitDeveloperApiUri) {
+    public static List<InternalMessages.TripInfo> getTripInfos(
+            List<String> routeIds, LocalDateTime validFrom, LocalDateTime validTo, String digitransitDeveloperApiUri) {
         List<String> dates = TimeUtils.getDates(validFrom, validTo);
         
         // Input: reitti-id, pvm, alkuaika, loppuaika
@@ -92,10 +93,10 @@ public class TripUtils {
      * parameters.
      */
     static List<InternalMessages.TripInfo> filterTripInfos(
-            List<InternalMessages.TripInfo> inputTripInfos, Date validFrom, Date validTo) {
+            List<InternalMessages.TripInfo> inputTripInfos, LocalDateTime validFrom, LocalDateTime validTo) {
         List<InternalMessages.TripInfo> outputTripInfos = inputTripInfos.stream().filter(tripInfo -> {
-            Date tripInfoDate = TimeUtils.getDate(tripInfo.getOperatingDay(), tripInfo.getStartTime());
-            return tripInfoDate.after(validFrom) && tripInfoDate.before(validTo);
+            LocalDateTime tripInfoDate = TimeUtils.getDate(tripInfo.getOperatingDay(), tripInfo.getStartTime());
+            return tripInfoDate.isAfter(validFrom) && tripInfoDate.isBefore(validTo);
         }).collect(Collectors.toList());
         
         return outputTripInfos;
@@ -108,7 +109,8 @@ public class TripUtils {
      * @param digitransitDeveloperApiUri
      * @return
      */
-    public static List<InternalMessages.TripInfo> getTripInfos(String date, List<String> routeIds, String digitransitDeveloperApiUri) {
+    public static List<InternalMessages.TripInfo> getTripInfos(
+            String date, List<String> routeIds, String digitransitDeveloperApiUri) {
         List<Route> routes = getRoutes(date, routeIds, digitransitDeveloperApiUri);
         List<InternalMessages.TripInfo> tripInfos = new ArrayList<>();
         

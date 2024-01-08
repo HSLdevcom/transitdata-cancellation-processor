@@ -3,9 +3,8 @@ package fi.hsl.transitdata.cancellation.util;
 import fi.hsl.common.transitdata.proto.InternalMessages;
 import org.junit.Test;
 
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -20,8 +19,8 @@ public class TripUtilsTest {
     
     @Test
     public void filterTripInfos() {
-        Date validFrom = TimeUtilsTest.getTestDate("2024-01-02 08:57:00");
-        Date validTo = TimeUtilsTest.getTestDate("2024-01-04 17:30:45");
+        LocalDateTime validFrom = TimeUtilsTest.getTestDate("2024-01-02 08:57:00");
+        LocalDateTime validTo = TimeUtilsTest.getTestDate("2024-01-04 17:30:45");
         
         List<InternalMessages.TripInfo> inputTrips = new ArrayList<>();
         // before

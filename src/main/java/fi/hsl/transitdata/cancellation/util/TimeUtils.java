@@ -3,18 +3,20 @@ package fi.hsl.transitdata.cancellation.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 public class TimeUtils {
 
     private static final Logger log = LoggerFactory.getLogger(TimeUtils.class);
     
-    private static final SimpleDateFormat SHORT_DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
-    private static final SimpleDateFormat LONG_DATE_FORMAT = new SimpleDateFormat("yyyyMMdd HHmm");
+    private static final DateTimeFormatter SHORT_DATETIMEFORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
+    
+    private static final DateTimeFormatter LONG_DATETIMEFORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd HHmm");
     
     // This methods is copied from transitdata-omm-cancellation-source
     public static Optional<Long> toUtcEpochMs(String localTimestamp) {
@@ -45,14 +47,14 @@ public class TimeUtils {
      * @return list of dates as string, each date has format 'YYYYMMDD'
      * @exception throws RuntimeException if parameter validFrom and/or validTo is null, or if validFrom is after validTo
      */
-    public static List<String> getDates(Date validFrom, Date validTo) {
+    public static List<String> getDates(LocalDateTime validFrom, LocalDateTime validTo) {
         if (validFrom == null && validTo == null) {
             throw new RuntimeException("validFrom and validTo are null");
         } else if (validFrom == null) {
             throw new RuntimeException("validFrom is null");
         } else if (validTo == null) {
             throw new RuntimeException("validTo is null");
-        } else if (validFrom.after(validTo)) {
+        } else if (validFrom.isAfter(validTo)) {
             throw new RuntimeException("validFrom is after validTo");
         }
         
@@ -61,7 +63,7 @@ public class TimeUtils {
         String validFromAsString = getDateAsString(validFrom);
         String validToAsString = getDateAsString(validTo);
         
-        Date nextDate = validFrom;
+        LocalDateTime nextDate = validFrom;
         String nextDateAsString = validFromAsString;
         dates.add(validFromAsString);
         
@@ -75,15 +77,12 @@ public class TimeUtils {
     }
     
     // Return date as format 'YYYYMMDD', for example '20240102'
-    private static String getDateAsString(Date someDate) {
-        return SHORT_DATE_FORMAT.format(someDate);
+    private static String getDateAsString(LocalDateTime someDate) {
+        return someDate.format(SHORT_DATETIMEFORMATTER);
     }
     
-    private static Date getNextDate(Date someDate) {
-        Calendar c = Calendar.getInstance();
-        c.setTime(someDate);
-        c.add(Calendar.DATE, 1);
-        return c.getTime();
+    private static LocalDateTime getNextDate(LocalDateTime someDate) {
+        return someDate.plusDays(1);
     }
     
     /**
@@ -92,14 +91,8 @@ public class TimeUtils {
      * @param timeAsString time as format 'HHMM'
      * @return
      */
-    static Date getDate(String dateAsString, String timeAsString) {
+    static LocalDateTime getDate(String dateAsString, String timeAsString) {
         String timestampAsString = dateAsString + " " + timeAsString;
-        Date outputDate;
-        try {
-            outputDate = LONG_DATE_FORMAT.parse(timestampAsString);
-        } catch (ParseException e) {
-            throw new RuntimeException("Failed to parse date '" + timestampAsString + "'", e);
-        }
-        return outputDate;
+        return LocalDateTime.parse(timestampAsString, LONG_DATETIMEFORMATTER);
     }
 }

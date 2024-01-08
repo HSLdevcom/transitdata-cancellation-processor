@@ -3,8 +3,10 @@ package fi.hsl.transitdata.cancellation.util;
 import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.cancellation.domain.CancellationData;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,8 +32,11 @@ public class BulletinUtils {
         // TODO: this implementation is not final
         List<CancellationData> tripCancellations = new ArrayList<>();
         
-        Date validFrom = new Date(massCancellation.getValidFromUtcMs());
-        Date validTo = new Date(massCancellation.getValidToUtcMs());
+        LocalDateTime validFrom = Instant.ofEpochMilli(
+                massCancellation.getValidFromUtcMs()).atZone(ZoneId.systemDefault()).toLocalDateTime();
+        
+        LocalDateTime validTo = Instant.ofEpochMilli(
+                massCancellation.getValidToUtcMs()).atZone(ZoneId.systemDefault()).toLocalDateTime();
         
         List<String> routeIds = massCancellation.getAffectedRoutesList().stream().
                 map(x -> x.getEntityId()).collect(Collectors.toList());
