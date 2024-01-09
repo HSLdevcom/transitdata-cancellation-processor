@@ -17,3 +17,5 @@ target/*
 
 *.tmp
 *.temp
+
+MyTripUtilsTest.java
