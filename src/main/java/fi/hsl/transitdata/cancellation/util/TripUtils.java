@@ -22,6 +22,13 @@ import static io.smallrye.graphql.client.core.Operation.operation;
 
 public class TripUtils {
     
+    /**
+     * Get routes using a GraphQL query.
+     * @param date date as string, with format 'YYYYMMDD' (e.g. '20240131')
+     * @param routeIds route identifiers
+     * @param digitransitDeveloperApiUri
+     * @return
+     */
     public static List<Route> getRoutes(String date, List<String> routeIds, String digitransitDeveloperApiUri) {
         List<Route> routes = new ArrayList<>();
         Vertx vertx = Vertx.vertx();
@@ -35,6 +42,8 @@ public class TripUtils {
                 field(
                         "routes",
                         args(arg("ids", routeIds)),
+                        field("id"),
+                        field("gtfsId"),
                         field(
                                 "trips",
                                 field("gtfsId"),
@@ -68,18 +77,12 @@ public class TripUtils {
         return routes;
     }
     
+    /**
+     * Get trip infos of a time period.
+     */
     public static List<InternalMessages.TripInfo> getTripInfos(
             List<String> routeIds, LocalDateTime validFrom, LocalDateTime validTo, String digitransitDeveloperApiUri) {
         List<String> dates = TimeUtils.getDates(validFrom, validTo);
-        
-        // Input: reitti-id, pvm, alkuaika, loppuaika
-        // Output: reitti-id, pvm, lähtöaika, suunta (0 ja 1, tai 1 ja 2)
-        // GraphQL-haku, digitransitin api key secreteihin
-        
-        // 1. haetaan tripinfot kullekin päivämäärälle
-        // 2. jos päivämäärä on sama kuin validFrom, filtteröidään pois alkuaikaa edeltäneet tripInfot
-        // 3. jos päivämäärä on sama kuin validTo, filtteröidään pois loppuajan jälkeiset tripInfot
-        // 4. yhdistetään kaikki tripInfot samaan kokoelmaan
         
         List<InternalMessages.TripInfo> tripInfos = dates.stream().flatMap(
                 dateAsString -> getTripInfos(dateAsString, routeIds, digitransitDeveloperApiUri).stream()
@@ -103,7 +106,7 @@ public class TripUtils {
     }
     
     /**
-     *
+     * Get trip infos of a single day and routeIds.
      * @param date date as string, with format 'YYYYMMDD' (e.g. '20240131')
      * @param routeIds route identifiers
      * @param digitransitDeveloperApiUri
@@ -116,14 +119,14 @@ public class TripUtils {
         
         for (Route route : routes) {
             for (Trip trip : route.getTrips()) {
-                trip.getDepartureStoptime().getServiceDay();
-                trip.getDepartureStoptime().getScheduledDeparture();
+                String operatingDay = TimeUtils.getShortDate(trip.getDepartureStoptime().getServiceDay());
+                String startTime = TimeUtils.getShortTime(trip.getDepartureStoptime().getScheduledDeparture());
                 
                 InternalMessages.TripInfo.Builder builder = InternalMessages.TripInfo.newBuilder();
                 builder.setRouteId(route.getGtfsId());
                 builder.setTripId(trip.getGtfsId());
-                //builder.setOperatingDay(trip.);
-                //builder.setStartTime(startTime);
+                builder.setOperatingDay(operatingDay);
+                builder.setStartTime(startTime);
                 builder.setDirectionId(Integer.valueOf(trip.getDirectionId()));
                 tripInfos.add(builder.build());
             }

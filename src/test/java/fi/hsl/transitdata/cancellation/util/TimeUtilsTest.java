@@ -107,4 +107,18 @@ public class TimeUtilsTest {
         
         assertEquals("2024-01-08 10:20:00", outputDate.format(DATETIMEFORMATTER));
     }
+    
+    @Test
+    public void getShortDate() {
+        int unixTimestampInSeconds = 1704319200;
+        String dateAsString = TimeUtils.getShortDate(unixTimestampInSeconds);
+        assertEquals("20240104", dateAsString);
+    }
+    
+    @Test
+    public void getShortTime() {
+        int secondsSinceMidnight = 25200;
+        String timeAsString = TimeUtils.getShortTime(secondsSinceMidnight);
+        assertEquals("0700", timeAsString);
+    }
 }

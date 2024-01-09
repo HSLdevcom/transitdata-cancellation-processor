@@ -1,8 +1,12 @@
 package fi.hsl.transitdata.cancellation.util;
 
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.time.DurationFormatUtils;
+import org.joda.time.DateTimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -14,9 +18,9 @@ public class TimeUtils {
 
     private static final Logger log = LoggerFactory.getLogger(TimeUtils.class);
     
-    private static final DateTimeFormatter SHORT_DATETIMEFORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
-    
-    private static final DateTimeFormatter LONG_DATETIMEFORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd HHmm");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd HHmm");
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HHmm");
     
     // This methods is copied from transitdata-omm-cancellation-source
     public static Optional<Long> toUtcEpochMs(String localTimestamp) {
@@ -78,7 +82,7 @@ public class TimeUtils {
     
     // Return date as format 'YYYYMMDD', for example '20240102'
     private static String getDateAsString(LocalDateTime someDate) {
-        return someDate.format(SHORT_DATETIMEFORMATTER);
+        return someDate.format(DATE_FORMATTER);
     }
     
     private static LocalDateTime getNextDate(LocalDateTime someDate) {
@@ -93,6 +97,26 @@ public class TimeUtils {
      */
     static LocalDateTime getDate(String dateAsString, String timeAsString) {
         String timestampAsString = dateAsString + " " + timeAsString;
-        return LocalDateTime.parse(timestampAsString, LONG_DATETIMEFORMATTER);
+        return LocalDateTime.parse(timestampAsString, DATE_TIME_FORMATTER);
+    }
+    
+    /**
+     * Get date in String, for example '20240108'.
+     * @param serviceDay Departure date of the trip. Format: Unix timestamp (local time) in seconds.
+     * @return Date as string in format 'YYYYMMDD'
+     */
+    public static String getShortDate(Integer serviceDay) {
+        Instant instant = Instant.ofEpochSecond(serviceDay);
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+        return localDateTime.format(DATE_FORMATTER);
+    }
+    
+    /**
+     * Get time in string, for example '1555'.
+     * @param scheduledDeparture Scheduled departure time. Format: seconds since midnight of the departure date.
+     * @return Time as string in format 'HHMM'
+     */
+    public static String getShortTime(Integer scheduledDeparture) {
+        return DurationFormatUtils.formatDuration(scheduledDeparture * 1000, "HHmm", true);
     }
 }
