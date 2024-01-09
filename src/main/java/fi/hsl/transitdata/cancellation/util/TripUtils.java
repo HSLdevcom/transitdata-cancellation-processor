@@ -82,7 +82,7 @@ public class TripUtils {
      */
     public static List<InternalMessages.TripInfo> getTripInfos(
             List<String> routeIds, LocalDateTime validFrom, LocalDateTime validTo, String digitransitDeveloperApiUri) {
-        List<String> dates = TimeUtils.getDates(validFrom, validTo);
+        List<String> dates = TimeUtils.getDatesAsList(validFrom, validTo);
         
         List<InternalMessages.TripInfo> tripInfos = dates.stream().flatMap(
                 dateAsString -> getTripInfos(dateAsString, routeIds, digitransitDeveloperApiUri).stream()
@@ -120,7 +120,7 @@ public class TripUtils {
         for (Route route : routes) {
             for (Trip trip : route.getTrips()) {
                 String operatingDay = TimeUtils.getShortDate(trip.getDepartureStoptime().getServiceDay());
-                String startTime = TimeUtils.getShortTime(trip.getDepartureStoptime().getScheduledDeparture());
+                String startTime = TimeUtils.getTimeAsString(trip.getDepartureStoptime().getScheduledDeparture());
                 
                 InternalMessages.TripInfo.Builder builder = InternalMessages.TripInfo.newBuilder();
                 builder.setRouteId(route.getGtfsId());

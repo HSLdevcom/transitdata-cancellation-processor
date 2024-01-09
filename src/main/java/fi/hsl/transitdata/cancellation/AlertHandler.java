@@ -1,6 +1,5 @@
 package fi.hsl.transitdata.cancellation;
 
-import com.typesafe.config.Config;
 import fi.hsl.common.pulsar.IMessageHandler;
 import fi.hsl.common.pulsar.PulsarApplicationContext;
 import fi.hsl.common.transitdata.TransitdataProperties;

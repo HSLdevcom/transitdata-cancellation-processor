@@ -1,8 +1,6 @@
 package fi.hsl.transitdata.cancellation.util;
 
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
-import org.joda.time.DateTimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +10,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class TimeUtils {
 
@@ -20,28 +17,6 @@ public class TimeUtils {
     
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd HHmm");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HHmm");
-    
-    // This methods is copied from transitdata-omm-cancellation-source
-    public static Optional<Long> toUtcEpochMs(String localTimestamp) {
-        return toUtcEpochMs(localTimestamp, "timeZone");
-    }
-
-    // This methods is copied from transitdata-omm-cancellation-source
-    public static Optional<Long> toUtcEpochMs(String localTimestamp, String zoneId) {
-        if (localTimestamp == null || localTimestamp.isEmpty())
-            return Optional.empty();
-
-        try {
-            LocalDateTime dt = LocalDateTime.parse(localTimestamp.replace(" ", "T")); // Make java.sql.Timestamp ISO compatible
-            ZoneId zone = ZoneId.of(zoneId);
-            long epochMs = dt.atZone(zone).toInstant().toEpochMilli();
-            return Optional.of(epochMs);
-        } catch (Exception e) {
-            TimeUtils.log.error("Failed to parse datetime from " + localTimestamp, e);
-            return Optional.empty();
-        }
-    }
     
     /**
      * Returns dates within the given time period. For example, if time period is from 2024-01-02 to 2024-01-05, this
@@ -51,7 +26,7 @@ public class TimeUtils {
      * @return list of dates as string, each date has format 'YYYYMMDD'
      * @exception throws RuntimeException if parameter validFrom and/or validTo is null, or if validFrom is after validTo
      */
-    public static List<String> getDates(LocalDateTime validFrom, LocalDateTime validTo) {
+    public static List<String> getDatesAsList(LocalDateTime validFrom, LocalDateTime validTo) {
         if (validFrom == null && validTo == null) {
             throw new RuntimeException("validFrom and validTo are null");
         } else if (validFrom == null) {
@@ -116,7 +91,7 @@ public class TimeUtils {
      * @param scheduledDeparture Scheduled departure time. Format: seconds since midnight of the departure date.
      * @return Time as string in format 'HHMM'
      */
-    public static String getShortTime(Integer scheduledDeparture) {
+    public static String getTimeAsString(Integer scheduledDeparture) {
         return DurationFormatUtils.formatDuration(scheduledDeparture * 1000, "HHmm", true);
     }
 }

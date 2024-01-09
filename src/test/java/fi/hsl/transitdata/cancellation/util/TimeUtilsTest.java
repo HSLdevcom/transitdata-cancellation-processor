@@ -21,7 +21,7 @@ public class TimeUtilsTest {
         LocalDateTime validFrom = getTestDate("2024-01-04 23:05:00");
         LocalDateTime validTo = getTestDate("2024-01-05 06:30:45");
         
-        List<String> dates = TimeUtils.getDates(validFrom, validTo);
+        List<String> dates = TimeUtils.getDatesAsList(validFrom, validTo);
         assertEquals(2, dates.size());
         assertEquals("20240104", dates.get(0));
         assertEquals("20240105", dates.get(1));
@@ -32,7 +32,7 @@ public class TimeUtilsTest {
         LocalDateTime validFrom = getTestDate("2024-01-04 10:05:00");
         LocalDateTime validTo = getTestDate("2024-01-06 18:30:45");
         
-        List<String> dates = TimeUtils.getDates(validFrom, validTo);
+        List<String> dates = TimeUtils.getDatesAsList(validFrom, validTo);
         assertEquals(3, dates.size());
         assertEquals("20240104", dates.get(0));
         assertEquals("20240105", dates.get(1));
@@ -44,7 +44,7 @@ public class TimeUtilsTest {
         LocalDateTime validFrom = getTestDate("2024-01-04 10:05:00");
         LocalDateTime validTo = getTestDate("2024-01-04 18:30:45");
         
-        List<String> dates = TimeUtils.getDates(validFrom, validTo);
+        List<String> dates = TimeUtils.getDatesAsList(validFrom, validTo);
         assertEquals(1, dates.size());
         assertEquals("20240104", dates.get(0));
     }
@@ -54,7 +54,7 @@ public class TimeUtilsTest {
         LocalDateTime validFrom = getTestDate("2024-01-30 10:05:00");
         LocalDateTime validTo = getTestDate("2024-02-02 18:30:45");
         
-        List<String> dates = TimeUtils.getDates(validFrom, validTo);
+        List<String> dates = TimeUtils.getDatesAsList(validFrom, validTo);
         assertEquals(4, dates.size());
         assertEquals("20240130", dates.get(0));
         assertEquals("20240131", dates.get(1));
@@ -67,7 +67,7 @@ public class TimeUtilsTest {
         LocalDateTime validFrom = null;
         LocalDateTime validTo = getTestDate("2024-01-06 18:30:45");
         
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> TimeUtils.getDates(validFrom, validTo));
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> TimeUtils.getDatesAsList(validFrom, validTo));
         assertTrue(thrown.getMessage().equals("validFrom is null"));
     }
     
@@ -76,7 +76,7 @@ public class TimeUtilsTest {
         LocalDateTime validFrom = getTestDate("2024-01-06 18:30:45");
         LocalDateTime validTo = null;
         
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> TimeUtils.getDates(validFrom, validTo));
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> TimeUtils.getDatesAsList(validFrom, validTo));
         assertTrue(thrown.getMessage().equals("validTo is null"));
     }
     
@@ -85,7 +85,7 @@ public class TimeUtilsTest {
         LocalDateTime validFrom = null;
         LocalDateTime validTo = null;
         
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> TimeUtils.getDates(validFrom, validTo));
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> TimeUtils.getDatesAsList(validFrom, validTo));
         assertTrue(thrown.getMessage().equals("validFrom and validTo are null"));
     }
     
@@ -94,7 +94,7 @@ public class TimeUtilsTest {
         LocalDateTime validFrom = getTestDate("2024-01-06 18:30:45");
         LocalDateTime validTo = getTestDate("2024-01-04 10:05:00");
         
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> TimeUtils.getDates(validFrom, validTo));
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> TimeUtils.getDatesAsList(validFrom, validTo));
         assertTrue(thrown.getMessage().equals("validFrom is after validTo"));
     }
     
@@ -118,7 +118,7 @@ public class TimeUtilsTest {
     @Test
     public void getShortTime() {
         int secondsSinceMidnight = 25200;
-        String timeAsString = TimeUtils.getShortTime(secondsSinceMidnight);
+        String timeAsString = TimeUtils.getTimeAsString(secondsSinceMidnight);
         assertEquals("0700", timeAsString);
     }
 }
