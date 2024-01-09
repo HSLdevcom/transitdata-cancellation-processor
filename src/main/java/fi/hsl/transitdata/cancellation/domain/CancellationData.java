@@ -2,7 +2,6 @@ package fi.hsl.transitdata.cancellation.domain;
 
 import fi.hsl.common.transitdata.proto.InternalMessages;
 
-// This method is copied from transitdata-omm-cancellation-source
 public class CancellationData {
     public final InternalMessages.TripCancellation payload;
     public final long timestampEpochMs;

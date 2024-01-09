@@ -54,20 +54,7 @@ public class GtfsUtils {
                 return GtfsRealtime.Alert.Cause.UNKNOWN_CAUSE;
         }
     }
-
-    public static GtfsRealtime.Alert.Effect getGtfsEffect(final InternalMessages.Bulletin bulletin, final boolean globalNoServiceAlerts) {
-        final boolean affectsAll = BulletinUtils.bulletinAffectsAll(bulletin);
-        final InternalMessages.Bulletin.Impact impact = bulletin.getImpact();
-
-        final GtfsRealtime.Alert.Effect effect = toGtfsEffect(impact);
-        if (effect == GtfsRealtime.Alert.Effect.NO_SERVICE && affectsAll && !globalNoServiceAlerts) {
-            //If the bulletin affects all traffic (i.e. entity selector list contains agency), we don't want to use NO_SERVICE effect, because otherwise Google and others will display all traffic as cancelled
-            return GtfsRealtime.Alert.Effect.REDUCED_SERVICE;
-        }
-
-        return effect;
-    }
-
+    
     public static GtfsRealtime.Alert.Effect toGtfsEffect(final InternalMessages.Bulletin.Impact impact) {
         switch (impact) {
             case CANCELLED:
