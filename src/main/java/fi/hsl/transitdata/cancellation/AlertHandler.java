@@ -22,6 +22,7 @@ public class AlertHandler implements IMessageHandler {
     private final boolean globalNoServiceAlerts;
     
     private final String digitransitDeveloperApiUri;
+    private final String timezone;
 
     public AlertHandler(final PulsarApplicationContext context, String digitransitDeveloperApiUri) {
         this.consumer = context.getConsumer();
@@ -29,6 +30,8 @@ public class AlertHandler implements IMessageHandler {
 
         this.globalNoServiceAlerts = context.getConfig().getBoolean("application.enableGlobalNoServiceAlerts");
         this.digitransitDeveloperApiUri = digitransitDeveloperApiUri;
+        timezone = context.getConfig().getString("cancellation.timezone");
+        log.info("Using timezone " + timezone);
     }
     
     @Override
@@ -40,7 +43,7 @@ public class AlertHandler implements IMessageHandler {
             if (TransitdataSchema.hasProtobufSchema(message, TransitdataProperties.ProtobufSchema.TransitdataServiceAlert)) {
                 InternalMessages.ServiceAlert serviceAlert = InternalMessages.ServiceAlert.parseFrom(message.getData());
                 List<InternalMessages.Bulletin> massCancellations = BulletinUtils.filterMassCancellationsFromBulletins(serviceAlert.getBulletinsList());
-                cancellationDataList = BulletinUtils.parseCancellationDataFromBulletins(massCancellations, digitransitDeveloperApiUri);
+                cancellationDataList = BulletinUtils.parseCancellationDataFromBulletins(massCancellations, digitransitDeveloperApiUri, timezone);
             } else if (TransitdataSchema.hasProtobufSchema(message, TransitdataProperties.ProtobufSchema.InternalMessagesTripCancellation)) {
                 InternalMessages.TripCancellation tripCancellation = InternalMessages.TripCancellation.parseFrom(message.getData());
                 CancellationData data = new CancellationData(tripCancellation, message.getEventTime(), message.getKey(), -1);

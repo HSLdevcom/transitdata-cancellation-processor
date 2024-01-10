@@ -80,9 +80,9 @@ public class TimeUtils {
      * @param serviceDay Departure date of the trip. Format: Unix timestamp (local time) in seconds.
      * @return Date as string in format 'YYYYMMDD'
      */
-    public static String getShortDate(Integer serviceDay) {
+    public static String getShortDate(Integer serviceDay, String zoneIdString) {
         Instant instant = Instant.ofEpochSecond(serviceDay);
-        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.of(zoneIdString));
         return localDateTime.format(DATE_FORMATTER);
     }
     

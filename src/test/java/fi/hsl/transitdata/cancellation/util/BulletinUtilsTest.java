@@ -36,7 +36,7 @@ public class BulletinUtilsTest {
     public void parseCancellationDataFromBulletins() {
         try (MockedStatic<TripUtils> tripUtils = Mockito.mockStatic(TripUtils.class)) {
             List<CancellationData> cancellationData = BulletinUtils.parseCancellationDataFromBulletins(
-                    initializeTestTrips(tripUtils), "");
+                    initializeTestTrips(tripUtils), "", "Europe/Helsinki");
             assertEquals(3, cancellationData.size());
             assertEquals("HSL:4611", cancellationData.get(0).getPayload().getRouteId());
             assertEquals("HSL:4611", cancellationData.get(1).getPayload().getRouteId());
@@ -55,7 +55,8 @@ public class BulletinUtilsTest {
         trips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240102_La_1_0734", "20240102", "0734", 2));
         
         tripUtils.when(() -> TripUtils.getTripInfos(
-                any(List.class), any(LocalDateTime.class), any(LocalDateTime.class), anyString())).thenReturn(trips);
+                any(List.class), any(LocalDateTime.class), any(LocalDateTime.class),
+                anyString(), anyString())).thenReturn(trips);
         
         InternalMessages.Bulletin bulletinMassCancellation = createBulletin(
                 InternalMessages.Bulletin.Impact.CANCELLED,

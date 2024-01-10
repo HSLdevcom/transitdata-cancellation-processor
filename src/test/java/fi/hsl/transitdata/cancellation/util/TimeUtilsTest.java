@@ -111,7 +111,7 @@ public class TimeUtilsTest {
     @Test
     public void getShortDate() {
         int unixTimestampInSeconds = 1704319200;
-        String dateAsString = TimeUtils.getShortDate(unixTimestampInSeconds);
+        String dateAsString = TimeUtils.getShortDate(unixTimestampInSeconds, "Europe/Helsinki");
         assertEquals("20240104", dateAsString);
     }
     

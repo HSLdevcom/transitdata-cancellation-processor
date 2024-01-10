@@ -20,15 +20,18 @@ public class BulletinUtils {
                 .collect(Collectors.toList());
     }
     
-    public static List<CancellationData> parseCancellationDataFromBulletins(List<InternalMessages.Bulletin> massCancellations, String digitransitDeveloperApiUri) {
+    public static List<CancellationData> parseCancellationDataFromBulletins(
+            List<InternalMessages.Bulletin> massCancellations, String digitransitDeveloperApiUri, String zoneIdString) {
         List<CancellationData> tripCancellations = massCancellations.stream().
-                flatMap(mc -> createTripCancellations(mc, digitransitDeveloperApiUri).stream()).collect(Collectors.toList());
+                flatMap(mc -> createTripCancellations(mc, digitransitDeveloperApiUri, zoneIdString).stream()).
+                collect(Collectors.toList());
         return tripCancellations;
     }
     
     // One cancellation contains one trip
     // A route consists of many trips
-    private static List<CancellationData> createTripCancellations(InternalMessages.Bulletin massCancellation, String digitransitDeveloperApiUri) {
+    private static List<CancellationData> createTripCancellations(
+            InternalMessages.Bulletin massCancellation, String digitransitDeveloperApiUri, String zoneIdString) {
         // TODO: this implementation is not final
         List<CancellationData> tripCancellations = new ArrayList<>();
         
@@ -41,7 +44,8 @@ public class BulletinUtils {
         List<String> routeIds = massCancellation.getAffectedRoutesList().stream().
                 map(x -> x.getEntityId()).collect(Collectors.toList());
         
-        for (InternalMessages.TripInfo trip : TripUtils.getTripInfos(routeIds, validFrom, validTo, digitransitDeveloperApiUri)) {
+        for (InternalMessages.TripInfo trip : TripUtils.getTripInfos(
+                routeIds, validFrom, validTo, digitransitDeveloperApiUri, zoneIdString)) {
             InternalMessages.TripCancellation.Builder builder = InternalMessages.TripCancellation.newBuilder();
             long deviationCaseId = 0;
             //long deviationCaseId = trip.getDeviationCaseId();

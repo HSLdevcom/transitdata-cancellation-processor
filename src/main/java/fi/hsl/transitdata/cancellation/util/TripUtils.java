@@ -81,11 +81,12 @@ public class TripUtils {
      * Get trip infos of a time period.
      */
     public static List<InternalMessages.TripInfo> getTripInfos(
-            List<String> routeIds, LocalDateTime validFrom, LocalDateTime validTo, String digitransitDeveloperApiUri) {
+            List<String> routeIds, LocalDateTime validFrom, LocalDateTime validTo,
+            String digitransitDeveloperApiUri, String zoneIdString) {
         List<String> dates = TimeUtils.getDatesAsList(validFrom, validTo);
         
         List<InternalMessages.TripInfo> tripInfos = dates.stream().flatMap(
-                dateAsString -> getTripInfos(dateAsString, routeIds, digitransitDeveloperApiUri).stream()
+                dateAsString -> getTripInfos(dateAsString, routeIds, digitransitDeveloperApiUri, zoneIdString).stream()
         ).collect(Collectors.toList());
         
         return filterTripInfos(tripInfos, validFrom, validTo);
@@ -113,13 +114,13 @@ public class TripUtils {
      * @return
      */
     public static List<InternalMessages.TripInfo> getTripInfos(
-            String date, List<String> routeIds, String digitransitDeveloperApiUri) {
+            String date, List<String> routeIds, String digitransitDeveloperApiUri, String zoneIdString) {
         List<Route> routes = getRoutes(date, routeIds, digitransitDeveloperApiUri);
         List<InternalMessages.TripInfo> tripInfos = new ArrayList<>();
         
         for (Route route : routes) {
             for (Trip trip : route.getTrips()) {
-                String operatingDay = TimeUtils.getShortDate(trip.getDepartureStoptime().getServiceDay());
+                String operatingDay = TimeUtils.getShortDate(trip.getDepartureStoptime().getServiceDay(), zoneIdString);
                 String startTime = TimeUtils.getTimeAsString(trip.getDepartureStoptime().getScheduledDeparture());
                 
                 InternalMessages.TripInfo.Builder builder = InternalMessages.TripInfo.newBuilder();
