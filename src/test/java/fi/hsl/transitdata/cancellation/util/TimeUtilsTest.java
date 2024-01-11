@@ -111,9 +111,9 @@ public class TimeUtilsTest {
     }
     
     @Test
-    public void testGetShortDate() {
+    public void testGetDateAsString() {
         int unixTimestampInSeconds = 1704319200;
-        String dateAsString = TimeUtils.getShortDate(unixTimestampInSeconds);
+        String dateAsString = TimeUtils.getDateAsString(unixTimestampInSeconds);
 
         Instant expectedInstant = Instant.ofEpochSecond(unixTimestampInSeconds);
         String expected = LocalDateTime.ofInstant(expectedInstant, ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyyMMdd"));

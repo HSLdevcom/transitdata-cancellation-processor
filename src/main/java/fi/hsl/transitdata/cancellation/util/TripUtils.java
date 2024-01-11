@@ -119,7 +119,7 @@ public class TripUtils {
         
         for (Route route : routes) {
             for (Trip trip : route.getTrips()) {
-                String operatingDay = TimeUtils.getShortDate(trip.getDepartureStoptime().getServiceDay());
+                String operatingDay = TimeUtils.getDateAsString(trip.getDepartureStoptime().getServiceDay());
                 String startTime = TimeUtils.getTimeAsString(trip.getDepartureStoptime().getScheduledDeparture());
                 
                 InternalMessages.TripInfo.Builder builder = InternalMessages.TripInfo.newBuilder();
