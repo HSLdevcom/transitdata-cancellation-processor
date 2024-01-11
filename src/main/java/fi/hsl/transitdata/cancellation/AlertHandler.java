@@ -19,7 +19,6 @@ public class AlertHandler implements IMessageHandler {
 
     private final Consumer<byte[]> consumer;
     private final Producer<byte[]> producer;
-    private final boolean globalNoServiceAlerts;
     
     private final String digitransitDeveloperApiUri;
 
@@ -27,7 +26,6 @@ public class AlertHandler implements IMessageHandler {
         this.consumer = context.getConsumer();
         this.producer = context.getSingleProducer();
 
-        this.globalNoServiceAlerts = context.getConfig().getBoolean("application.enableGlobalNoServiceAlerts");
         this.digitransitDeveloperApiUri = digitransitDeveloperApiUri;
     }
     
