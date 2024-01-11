@@ -2,7 +2,9 @@ package fi.hsl.transitdata.cancellation.util;
 
 import org.junit.Test;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -112,7 +114,12 @@ public class TimeUtilsTest {
     public void getShortDate() {
         int unixTimestampInSeconds = 1704319200;
         String dateAsString = TimeUtils.getShortDate(unixTimestampInSeconds);
-        assertEquals("20240104", dateAsString);
+
+        Instant expectedInstant = Instant.ofEpochSecond(unixTimestampInSeconds);
+        String expected = LocalDateTime.ofInstant(expectedInstant, ZoneId.of("Europe/Helsinki")).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+
+        assertEquals(expected, dateAsString);
     }
     
     @Test
