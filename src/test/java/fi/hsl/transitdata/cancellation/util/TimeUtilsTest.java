@@ -19,7 +19,7 @@ public class TimeUtilsTest {
     }
     
     @Test
-    public void getDatesTwoDates() {
+    public void testGetDatesTwoDates() {
         LocalDateTime validFrom = getTestDate("2024-01-04 23:05:00");
         LocalDateTime validTo = getTestDate("2024-01-05 06:30:45");
         
@@ -30,7 +30,7 @@ public class TimeUtilsTest {
     }
     
     @Test
-    public void getDatesThreeDates() {
+    public void testGetDatesThreeDates() {
         LocalDateTime validFrom = getTestDate("2024-01-04 10:05:00");
         LocalDateTime validTo = getTestDate("2024-01-06 18:30:45");
         
@@ -42,7 +42,7 @@ public class TimeUtilsTest {
     }
     
     @Test
-    public void getDatesOneDate() {
+    public void testGetDatesOneDate() {
         LocalDateTime validFrom = getTestDate("2024-01-04 10:05:00");
         LocalDateTime validTo = getTestDate("2024-01-04 18:30:45");
         
@@ -52,7 +52,7 @@ public class TimeUtilsTest {
     }
     
     @Test
-    public void getDatesFourDatesInTwoMonths() {
+    public void testGetDatesFourDatesInTwoMonths() {
         LocalDateTime validFrom = getTestDate("2024-01-30 10:05:00");
         LocalDateTime validTo = getTestDate("2024-02-02 18:30:45");
         
@@ -65,7 +65,7 @@ public class TimeUtilsTest {
     }
     
     @Test
-    public void getDatesValidFromIsNull() {
+    public void testGetDatesValidFromIsNull() {
         LocalDateTime validFrom = null;
         LocalDateTime validTo = getTestDate("2024-01-06 18:30:45");
         
@@ -74,7 +74,7 @@ public class TimeUtilsTest {
     }
     
     @Test
-    public void getDatesValidToIsNull() {
+    public void testGetDatesValidToIsNull() {
         LocalDateTime validFrom = getTestDate("2024-01-06 18:30:45");
         LocalDateTime validTo = null;
         
@@ -83,7 +83,7 @@ public class TimeUtilsTest {
     }
     
     @Test
-    public void getDatesBothInputParametersAreNull() {
+    public void testGetDatesBothInputParametersAreNull() {
         LocalDateTime validFrom = null;
         LocalDateTime validTo = null;
         
@@ -92,7 +92,7 @@ public class TimeUtilsTest {
     }
     
     @Test
-    public void getDatesValidFromIsAfterValidTo() {
+    public void testGetDatesValidFromIsAfterValidTo() {
         LocalDateTime validFrom = getTestDate("2024-01-06 18:30:45");
         LocalDateTime validTo = getTestDate("2024-01-04 10:05:00");
         
@@ -101,7 +101,7 @@ public class TimeUtilsTest {
     }
     
     @Test
-    public void getDate() {
+    public void testGetDate() {
         String dateAsString = "20240108";
         String timeAsString = "1020";
         
@@ -111,7 +111,7 @@ public class TimeUtilsTest {
     }
     
     @Test
-    public void getShortDate() {
+    public void testGetShortDate() {
         int unixTimestampInSeconds = 1704319200;
         String dateAsString = TimeUtils.getShortDate(unixTimestampInSeconds);
 
@@ -123,7 +123,7 @@ public class TimeUtilsTest {
     }
     
     @Test
-    public void getShortTime() {
+    public void testGetShortTime() {
         int secondsSinceMidnight = 25200;
         String timeAsString = TimeUtils.getTimeAsString(secondsSinceMidnight);
         assertEquals("0700", timeAsString);
