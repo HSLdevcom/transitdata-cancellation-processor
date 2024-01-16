@@ -37,6 +37,9 @@ public class AlertHandler implements IMessageHandler {
             
             if (TransitdataSchema.hasProtobufSchema(message, TransitdataProperties.ProtobufSchema.TransitdataServiceAlert)) {
                 InternalMessages.ServiceAlert serviceAlert = InternalMessages.ServiceAlert.parseFrom(message.getData());
+                serviceAlert.getBulletinsList().forEach(bulletin -> log.info(
+                        "Bulletin: impact={}, priority={}, category={}",
+                        bulletin.getImpact(), bulletin.getPriority(), bulletin.getCategory()));
                 List<InternalMessages.Bulletin> massCancellations = BulletinUtils.filterMassCancellationsFromBulletins(serviceAlert.getBulletinsList());
                 
                 if (massCancellations.isEmpty()) {
