@@ -59,6 +59,7 @@ public class AlertHandler implements IMessageHandler {
             // TODO: is cache of trip cancellations needed?
             // Cachesta voidaan katsoa onko ko. peruutus jo lähetetty
             // Jos peruutuksen linjoja muutetaan, voidaan cachesta katsoa mitkä lähdöt voidaan ottaa pois peruutuksista
+            log.info("Sending {} cancellations", cancellationDataList.size());
             sendCancellations(cancellationDataList);
         } catch (final Exception e) {
             log.error("Exception while handling message", e);
@@ -94,12 +95,13 @@ public class AlertHandler implements IMessageHandler {
                     .property(TransitdataProperties.KEY_DVJ_ID, dvjId)
                     .property(TransitdataProperties.KEY_PROTOBUF_SCHEMA, TransitdataProperties.ProtobufSchema.InternalMessagesTripCancellation.toString())
                     .send();
-            
+            /*
             if (tripCancellation.getDeviationCasesType() == InternalMessages.TripCancellation.DeviationCasesType.CANCEL_DEPARTURE && tripCancellation.getAffectedDeparturesType() == InternalMessages.TripCancellation.AffectedDeparturesType.CANCEL_ENTIRE_DEPARTURE) {
                 log.info("Produced entire departure cancellation for trip: " + tripCancellation.getRouteId() + "/" +
                         tripCancellation.getDirectionId() + "-" + tripCancellation.getStartTime() + "-" +
                         tripCancellation.getStartDate());
             }
+            */
         } catch (PulsarClientException pe) {
             log.error("Failed to send message to Pulsar", pe);
             throw pe;

@@ -115,6 +115,13 @@ public class TripUtils {
     public static List<InternalMessages.TripInfo> getTripInfos(
             String date, List<String> routeIds, String digitransitDeveloperApiUri) {
         List<Route> routes = getRoutes(date, routeIds, digitransitDeveloperApiUri);
+        
+        if (routes == null) {
+            throw new RuntimeException("Failed to get routes (date=" + date + ", routeIds=" + routeIds
+                    + ", digitransitDeveloperApiUri="
+                    + digitransitDeveloperApiUri.startsWith("https://dev-api.digitransit.fi") + ")");
+        }
+        
         List<InternalMessages.TripInfo> tripInfos = new ArrayList<>();
         
         for (Route route : routes) {
