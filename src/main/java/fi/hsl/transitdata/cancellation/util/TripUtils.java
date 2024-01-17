@@ -110,13 +110,20 @@ public class TripUtils {
      */
     static List<InternalMessages.TripInfo> filterTripInfos(
             List<InternalMessages.TripInfo> inputTripInfos, LocalDateTime validFrom, LocalDateTime validTo) {
+        
+        LocalDateTime tripInfoMinimumDate = inputTripInfos.stream().map(tripInfo -> TimeUtils.getDate(
+                tripInfo.getOperatingDay(), tripInfo.getStartTime())).min(LocalDateTime::compareTo).orElse(null);
+        
+        LocalDateTime tripInfoMaximumDate = inputTripInfos.stream().map(tripInfo -> TimeUtils.getDate(
+                tripInfo.getOperatingDay(), tripInfo.getStartTime())).max(LocalDateTime::compareTo).orElse(null);
+        
         List<InternalMessages.TripInfo> outputTripInfos = inputTripInfos.stream().filter(tripInfo -> {
             LocalDateTime tripInfoDate = TimeUtils.getDate(tripInfo.getOperatingDay(), tripInfo.getStartTime());
             return tripInfoDate.isAfter(validFrom) && tripInfoDate.isBefore(validTo);
         }).collect(Collectors.toList());
         
-        log.info("There are {} trip infos after filtering (before filtering {} trip infos). validFrom={}, validTo={}",
-                outputTripInfos.size(), inputTripInfos.size(), validFrom, validTo);
+        log.info("There are {} trip infos after filtering (before filtering {} trip infos). validFrom={}, validTo={}, tripInfoMinimumDate={}, tripInfoMaximumDate={}",
+                outputTripInfos.size(), inputTripInfos.size(), validFrom, validTo, tripInfoMinimumDate, tripInfoMaximumDate);
         return outputTripInfos;
     }
     
