@@ -115,8 +115,8 @@ public class TripUtils {
             return tripInfoDate.isAfter(validFrom) && tripInfoDate.isBefore(validTo);
         }).collect(Collectors.toList());
         
-        log.info("There are {} trip infos after filtering (before filtering {} trip infos)",
-                outputTripInfos.size(), inputTripInfos.size());
+        log.info("There are {} trip infos after filtering (before filtering {} trip infos). validFrom={}, validTo={}",
+                outputTripInfos.size(), inputTripInfos.size(), validFrom, validTo);
         return outputTripInfos;
     }
     
