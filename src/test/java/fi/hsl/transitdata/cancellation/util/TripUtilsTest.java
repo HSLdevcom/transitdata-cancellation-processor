@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -14,11 +15,16 @@ import static org.junit.Assert.*;
 public class TripUtilsTest {
     
     @Test
-    public void getTripInfos() {
+    public void testFixRouteIds() {
+        List<String> routeIds = Arrays.asList("1234", "HSL:4567");
+        List<String> fixedRouteIds = TripUtils.fixRouteIds(routeIds);
+        assertEquals(2, fixedRouteIds.size());
+        assertTrue(fixedRouteIds.contains("HSL:1234"));
+        assertTrue(fixedRouteIds.contains("HSL:4567"));
     }
     
     @Test
-    public void filterTripInfos() {
+    public void testFilterTripInfos() {
         LocalDateTime validFrom = TimeUtilsTest.getTestDate("2024-01-02 08:57:00");
         LocalDateTime validTo = TimeUtilsTest.getTestDate("2024-01-04 17:30:45");
         
@@ -52,10 +58,6 @@ public class TripUtilsTest {
         assertFalse(outputTripIds.contains("HSL:4611_20240104_Ti_2_1731"));
         assertFalse(outputTripIds.contains("HSL:1079_20240104_La_1_1950"));
         
-    }
-    
-    @Test
-    public void testGetTripInfos() {
     }
     
     public static InternalMessages.TripInfo createTripInfo(

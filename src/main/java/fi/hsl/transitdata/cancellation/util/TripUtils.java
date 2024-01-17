@@ -32,6 +32,7 @@ public class TripUtils {
     public static List<Route> getRoutes(String date, List<String> routeIds, String digitransitDeveloperApiUri) {
         List<Route> routes = new ArrayList<>();
         Vertx vertx = Vertx.vertx();
+        List<String> fixedRouteIds = fixRouteIds(routeIds);
         
         DynamicGraphQLClient client = new VertxDynamicGraphQLClientBuilder()
                 .url(digitransitDeveloperApiUri)
@@ -41,7 +42,7 @@ public class TripUtils {
         Document document = document(operation(
                 field(
                         "routes",
-                        args(arg("ids", routeIds)),
+                        args(arg("ids", fixedRouteIds)),
                         field("id"),
                         field("gtfsId"),
                         field(
@@ -75,6 +76,14 @@ public class TripUtils {
         }
         
         return routes;
+    }
+    
+    /**
+     * Returns routeIds in format: 'HSL:1234'
+     */
+    static List<String> fixRouteIds(List<String> routeIds) {
+        return routeIds.stream().map(
+                routeId -> routeId.startsWith("HSL:") ? routeId : "HSL:" + routeId).collect(Collectors.toList());
     }
     
     /**
@@ -125,6 +134,10 @@ public class TripUtils {
         List<InternalMessages.TripInfo> tripInfos = new ArrayList<>();
         
         for (Route route : routes) {
+            if (route == null) {
+                continue;
+            }
+            
             for (Trip trip : route.getTrips()) {
                 String operatingDay = TimeUtils.getDateAsString(trip.getDepartureStoptime().getServiceDay());
                 String startTime = TimeUtils.getTimeAsString(trip.getDepartureStoptime().getScheduledDeparture());
