@@ -8,6 +8,8 @@ import io.smallrye.graphql.client.core.Document;
 import io.smallrye.graphql.client.dynamic.api.DynamicGraphQLClient;
 import io.smallrye.graphql.client.vertx.dynamic.VertxDynamicGraphQLClientBuilder;
 import io.vertx.core.Vertx;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,6 +23,8 @@ import static io.smallrye.graphql.client.core.Field.field;
 import static io.smallrye.graphql.client.core.Operation.operation;
 
 public class TripUtils {
+    
+    private static final Logger log = LoggerFactory.getLogger(TripUtils.class);
     
     /**
      * Get routes using a GraphQL query.
@@ -111,6 +115,8 @@ public class TripUtils {
             return tripInfoDate.isAfter(validFrom) && tripInfoDate.isBefore(validTo);
         }).collect(Collectors.toList());
         
+        log.info("There are {} trip infos after filtering (before filtering {} trip infos)",
+                outputTripInfos.size(), inputTripInfos.size());
         return outputTripInfos;
     }
     
@@ -124,6 +130,8 @@ public class TripUtils {
     public static List<InternalMessages.TripInfo> getTripInfos(
             String date, List<String> routeIds, String digitransitDeveloperApiUri) {
         List<Route> routes = getRoutes(date, routeIds, digitransitDeveloperApiUri);
+        log.info("Found {} routes (date={}, routeIds={}, digitransitDeveloperApiUri={})",
+                routes.size(), date, routeIds, digitransitDeveloperApiUri.startsWith("https://dev-api.digitransit.fi"));
         
         if (routes == null) {
             throw new RuntimeException("Failed to get routes (date=" + date + ", routeIds=" + routeIds
