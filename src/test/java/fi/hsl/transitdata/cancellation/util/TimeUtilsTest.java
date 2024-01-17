@@ -128,4 +128,11 @@ public class TimeUtilsTest {
         String timeAsString = TimeUtils.getTimeAsString(secondsSinceMidnight);
         assertEquals("0700", timeAsString);
     }
+    
+    @Test
+    public void testGetShortTimeAfterMidnight() {
+        int secondsSinceMidnight = 88140;
+        String timeAsString = TimeUtils.getTimeAsString(secondsSinceMidnight);
+        assertEquals("0029", timeAsString);
+    }
 }

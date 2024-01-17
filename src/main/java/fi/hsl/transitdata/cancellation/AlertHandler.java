@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class AlertHandler implements IMessageHandler {
     private static final Logger log = LoggerFactory.getLogger(AlertHandler.class);
@@ -45,8 +46,12 @@ public class AlertHandler implements IMessageHandler {
                 if (massCancellations.isEmpty()) {
                     log.info("No mass cancellation bulletins, total number of bulletins: " + serviceAlert.getBulletinsList());
                 } else {
+                    List<String> routeIds = massCancellations.stream().flatMap(massCancellation ->
+                            massCancellation.getAffectedRoutesList().stream().map(
+                                    InternalMessages.Bulletin.AffectedEntity::getEntityId)).collect(Collectors.toList());
                     cancellationDataList = BulletinUtils.parseCancellationDataFromBulletins(massCancellations, digitransitDeveloperApiUri);
-                    log.info("Added {} cancellations from mass cancellation service alert", cancellationDataList.size());
+                    log.info("Added {} cancellations from mass cancellation service alert. RouteIds: {}",
+                            cancellationDataList.size(), routeIds);
                 }
             } else if (TransitdataSchema.hasProtobufSchema(message, TransitdataProperties.ProtobufSchema.InternalMessagesTripCancellation)) {
                 InternalMessages.TripCancellation tripCancellation = InternalMessages.TripCancellation.parseFrom(message.getData());
