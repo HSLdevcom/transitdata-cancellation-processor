@@ -116,7 +116,7 @@ public class TimeUtilsTest {
         String dateAsString = TimeUtils.getDateAsString(unixTimestampInSeconds);
 
         Instant expectedInstant = Instant.ofEpochSecond(unixTimestampInSeconds);
-        String expected = LocalDateTime.ofInstant(expectedInstant, ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String expected = LocalDateTime.ofInstant(expectedInstant, ZoneId.of("Europe/Helsinki")).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
 
         assertEquals(expected, dateAsString);
