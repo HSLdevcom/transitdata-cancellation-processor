@@ -43,7 +43,7 @@ public class BulletinUtils {
         
         for (InternalMessages.TripInfo trip : TripUtils.getTripInfos(routeIds, validFrom, validTo, digitransitDeveloperApiUri)) {
             InternalMessages.TripCancellation.Builder builder = InternalMessages.TripCancellation.newBuilder();
-            long deviationCaseId = 0;
+            long deviationCaseId = InternalMessages.TripCancellation.DeviationCasesType.CANCEL_DEPARTURE.getNumber();
             //long deviationCaseId = trip.getDeviationCaseId();
             //builder.setDeviationCaseId(deviationCaseId);
             builder.setRouteId(trip.getRouteId());
@@ -76,7 +76,8 @@ public class BulletinUtils {
                 tripCancellations.add(data);
             }
              */
-            CancellationData data = new CancellationData(cancellation, 0, dvjId, deviationCaseId);
+            
+            CancellationData data = new CancellationData(cancellation, massCancellation.getLastModifiedUtcMs(), dvjId, deviationCaseId);
             tripCancellations.add(data);
         }
         
