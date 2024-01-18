@@ -82,7 +82,7 @@ public class TimeUtils {
      */
     public static String getDateAsString(Integer serviceDay) {
         Instant instant = Instant.ofEpochSecond(serviceDay);
-        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.of("Europe/Helsinki"));
         return localDateTime.format(DATE_FORMATTER);
     }
     
