@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import static io.smallrye.graphql.client.core.Argument.arg;
@@ -122,8 +123,8 @@ public class TripUtils {
             return tripInfoDate.isAfter(validFrom) && tripInfoDate.isBefore(validTo);
         }).collect(Collectors.toList());
         
-        log.info("There are {} trip infos after filtering (before filtering {} trip infos). validFrom={}, validTo={}, tripInfoMinimumDate={}, tripInfoMaximumDate={}",
-                outputTripInfos.size(), inputTripInfos.size(), validFrom, validTo, tripInfoMinimumDate, tripInfoMaximumDate);
+        log.info("There are {} trip infos after filtering (before filtering {} trip infos). validFrom={}, validTo={}, tripInfoMinimumDate={}, tripInfoMaximumDate={}, timeZone={}",
+                outputTripInfos.size(), inputTripInfos.size(), validFrom, validTo, tripInfoMinimumDate, tripInfoMaximumDate, TimeZone.getDefault().getDisplayName());
         return outputTripInfos;
     }
     
