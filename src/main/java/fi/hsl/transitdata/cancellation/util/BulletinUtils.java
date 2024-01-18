@@ -47,7 +47,7 @@ public class BulletinUtils {
             //long deviationCaseId = trip.getDeviationCaseId();
             //builder.setDeviationCaseId(deviationCaseId);
             builder.setRouteId(removeHSLPrefixFromRouteId(trip.getRouteId()));
-            builder.setDirectionId(trip.getDirectionId());
+            builder.setDirectionId(trip.getDirectionId() + 1);
             builder.setStartDate(trip.getOperatingDay());
             builder.setStartTime(trip.getStartTime());
             builder.setStatus(InternalMessages.TripCancellation.Status.RUNNING);
