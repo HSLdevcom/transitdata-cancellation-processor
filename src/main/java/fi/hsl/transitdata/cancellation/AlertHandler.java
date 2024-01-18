@@ -64,7 +64,6 @@ public class AlertHandler implements IMessageHandler {
             // TODO: is cache of trip cancellations needed?
             // Cachesta voidaan katsoa onko ko. peruutus jo lähetetty
             // Jos peruutuksen linjoja muutetaan, voidaan cachesta katsoa mitkä lähdöt voidaan ottaa pois peruutuksista
-            log.info("Sending {} cancellations", cancellationDataList.size());
             sendCancellations(cancellationDataList);
         } catch (final Exception e) {
             log.error("Exception while handling message", e);
