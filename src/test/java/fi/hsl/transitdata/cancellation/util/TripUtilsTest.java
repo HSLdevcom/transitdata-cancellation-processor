@@ -15,9 +15,9 @@ import static org.junit.Assert.*;
 public class TripUtilsTest {
     
     @Test
-    public void testFixRouteIds() {
+    public void testAddHSLPrefixToRouteIds() {
         List<String> routeIds = Arrays.asList("1234", "HSL:4567");
-        List<String> fixedRouteIds = TripUtils.fixRouteIds(routeIds);
+        List<String> fixedRouteIds = TripUtils.addHSLPrefixToRouteIds(routeIds);
         assertEquals(2, fixedRouteIds.size());
         assertTrue(fixedRouteIds.contains("HSL:1234"));
         assertTrue(fixedRouteIds.contains("HSL:4567"));

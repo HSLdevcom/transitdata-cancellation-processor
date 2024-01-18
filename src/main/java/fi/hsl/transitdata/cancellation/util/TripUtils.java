@@ -37,7 +37,7 @@ public class TripUtils {
     public static List<Route> getRoutes(String date, List<String> routeIds, String digitransitDeveloperApiUri) {
         List<Route> routes = new ArrayList<>();
         Vertx vertx = Vertx.vertx();
-        List<String> fixedRouteIds = fixRouteIds(routeIds);
+        List<String> fixedRouteIds = addHSLPrefixToRouteIds(routeIds);
         
         DynamicGraphQLClient client = new VertxDynamicGraphQLClientBuilder()
                 .url(digitransitDeveloperApiUri)
@@ -86,7 +86,7 @@ public class TripUtils {
     /**
      * Returns routeIds in format: 'HSL:1234'
      */
-    static List<String> fixRouteIds(List<String> routeIds) {
+    static List<String> addHSLPrefixToRouteIds(List<String> routeIds) {
         return routeIds.stream().map(
                 routeId -> routeId.startsWith("HSL:") ? routeId : "HSL:" + routeId).collect(Collectors.toList());
     }

@@ -38,9 +38,9 @@ public class BulletinUtilsTest {
             List<CancellationData> cancellationData = BulletinUtils.parseCancellationDataFromBulletins(
                     initializeTestTrips(tripUtils), "");
             assertEquals(3, cancellationData.size());
-            assertEquals("HSL:4611", cancellationData.get(0).getPayload().getRouteId());
-            assertEquals("HSL:4611", cancellationData.get(1).getPayload().getRouteId());
-            assertEquals("HSL:1079", cancellationData.get(2).getPayload().getRouteId());
+            assertEquals("4611", cancellationData.get(0).getPayload().getRouteId());
+            assertEquals("4611", cancellationData.get(1).getPayload().getRouteId());
+            assertEquals("1079", cancellationData.get(2).getPayload().getRouteId());
             
             assertEquals("HSL:4611_20240102_Ti_2_1415", cancellationData.get(0).getPayload().getTripId());
             assertEquals("HSL:4611_20240102_Ti_2_1515", cancellationData.get(1).getPayload().getTripId());
@@ -65,6 +65,14 @@ public class BulletinUtilsTest {
         List<InternalMessages.Bulletin> inputBulletins = new ArrayList<>();
         inputBulletins.add(bulletinMassCancellation);
         return inputBulletins;
+    }
+    
+    @Test
+    public void testRemoveHSLPrefixFromRouteId() {
+        String routeId1 = BulletinUtils.removeHSLPrefixFromRouteId("1234");
+        String routeId2 = BulletinUtils.removeHSLPrefixFromRouteId("HSL:4567");
+        assertEquals("1234", routeId1);
+        assertEquals("4567", routeId2);
     }
     
     private static List<InternalMessages.Bulletin> initializeTestBulletin() {

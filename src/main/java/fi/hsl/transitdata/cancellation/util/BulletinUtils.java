@@ -46,7 +46,7 @@ public class BulletinUtils {
             long deviationCaseId = InternalMessages.TripCancellation.DeviationCasesType.CANCEL_DEPARTURE.getNumber();
             //long deviationCaseId = trip.getDeviationCaseId();
             //builder.setDeviationCaseId(deviationCaseId);
-            builder.setRouteId(trip.getRouteId());
+            builder.setRouteId(removeHSLPrefixFromRouteId(trip.getRouteId()));
             builder.setDirectionId(trip.getDirectionId());
             builder.setStartDate(trip.getOperatingDay());
             builder.setStartTime(trip.getStartTime());
@@ -82,5 +82,15 @@ public class BulletinUtils {
         }
         
         return tripCancellations;
+    }
+    
+    /**
+     * Returns routeId without 'HSL:' prefix
+     */
+    static String removeHSLPrefixFromRouteId(String routeId) {
+        if (routeId.startsWith("HSL:")) {
+            return routeId.substring(4);
+        }
+        return routeId;
     }
 }
