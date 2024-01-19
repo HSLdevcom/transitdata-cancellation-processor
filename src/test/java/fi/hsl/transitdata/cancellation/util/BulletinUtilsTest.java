@@ -45,6 +45,10 @@ public class BulletinUtilsTest {
             assertEquals("HSL:4611_20240102_Ti_2_1415", cancellationData.get(0).getPayload().getTripId());
             assertEquals("HSL:4611_20240102_Ti_2_1515", cancellationData.get(1).getPayload().getTripId());
             assertEquals("HSL:1079_20240102_La_1_0734", cancellationData.get(2).getPayload().getTripId());
+            
+            assertEquals("14:15:00", cancellationData.get(0).getPayload().getStartTime());
+            assertEquals("15:15:00", cancellationData.get(1).getPayload().getStartTime());
+            assertEquals("07:34:00", cancellationData.get(2).getPayload().getStartTime());
         }
     }
     
@@ -73,6 +77,11 @@ public class BulletinUtilsTest {
         String routeId2 = BulletinUtils.removeHSLPrefixFromRouteId("HSL:4567");
         assertEquals("1234", routeId1);
         assertEquals("4567", routeId2);
+    }
+    
+    @Test
+    public void testFormatTime() {
+        assertEquals("07:42:00", BulletinUtils.formatTime("0742"));
     }
     
     private static List<InternalMessages.Bulletin> initializeTestBulletin() {

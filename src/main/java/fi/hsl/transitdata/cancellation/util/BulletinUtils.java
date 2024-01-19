@@ -49,7 +49,7 @@ public class BulletinUtils {
             builder.setRouteId(removeHSLPrefixFromRouteId(trip.getRouteId()));
             builder.setDirectionId(trip.getDirectionId() + 1);
             builder.setStartDate(trip.getOperatingDay());
-            builder.setStartTime(trip.getStartTime());
+            builder.setStartTime(formatTime(trip.getStartTime()));
             builder.setStatus(InternalMessages.TripCancellation.Status.RUNNING);
             builder.setSchemaVersion(builder.getSchemaVersion());
             String dvjId = trip.getTripId();
@@ -92,5 +92,16 @@ public class BulletinUtils {
             return routeId.substring(4);
         }
         return routeId;
+    }
+    
+    /**
+     * Format time for pulsar message.
+     * @param timeAsString time in format 'HHMM' (e.g. '0742')
+     * @return time in format 'HH:MM:SS' (e.g. '07:42:00')
+     */
+    static String formatTime(String timeAsString) {
+        String hours = timeAsString.substring(0, 2);
+        String minutes = timeAsString.substring(2, 4);
+        return hours + ":" + minutes + ":00";
     }
 }
