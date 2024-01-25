@@ -50,7 +50,7 @@ public class BulletinUtils {
             builder.setDirectionId(trip.getDirectionId() + 1);
             builder.setStartDate(trip.getOperatingDay());
             builder.setStartTime(formatTime(trip.getStartTime()));
-            builder.setStatus(InternalMessages.TripCancellation.Status.RUNNING);
+            builder.setStatus(InternalMessages.TripCancellation.Status.CANCELED);
             builder.setSchemaVersion(builder.getSchemaVersion());
             String dvjId = trip.getTripId();
             //String dvjId = Long.toString(trip.getDvjId());
