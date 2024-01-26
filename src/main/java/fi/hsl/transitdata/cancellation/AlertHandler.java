@@ -1,5 +1,7 @@
 package fi.hsl.transitdata.cancellation;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import fi.hsl.common.pulsar.IMessageHandler;
 import fi.hsl.common.pulsar.PulsarApplicationContext;
 import fi.hsl.common.transitdata.TransitdataProperties;
@@ -12,6 +14,8 @@ import org.apache.pulsar.client.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,6 +25,18 @@ public class AlertHandler implements IMessageHandler {
     private final Consumer<byte[]> consumer;
     private final Producer<byte[]> producer;
     
+    public static final Duration CACHE_DURATION = Duration.of(4, ChronoUnit.HOURS);
+    
+    //There can be multiple cancellations for each trip. We need to keep track of them to find out whether there is an active cancellation
+    // KEY: bulletinId, VALUE: Map<KEY: tripId, VALUE: tripCancellationStatus>
+    private final Cache<String, Map<String, InternalMessages.TripCancellation.Status>> bulletinsCache;
+    
+    // KEY: tripId, VALUE: Map<KEY: bulletinId, VALUE: tripCancellationStatus>
+    private final Cache<String, Map<String, InternalMessages.TripCancellation.Status>> cancellationStatusCache;
+    
+    // KEY: tripId, VALUE: cancellationData
+    private final Cache<String, CancellationData> cancellationsCache;
+    
     private final String digitransitDeveloperApiUri;
 
     public AlertHandler(final PulsarApplicationContext context, String digitransitDeveloperApiUri) {
@@ -28,6 +44,16 @@ public class AlertHandler implements IMessageHandler {
         this.producer = context.getSingleProducer();
 
         this.digitransitDeveloperApiUri = digitransitDeveloperApiUri;
+        
+        this.bulletinsCache = Caffeine.newBuilder()
+                .expireAfterAccess(CACHE_DURATION)
+                .build(key -> new HashMap<>());
+        
+        this.cancellationStatusCache = Caffeine.newBuilder()
+                .expireAfterAccess(CACHE_DURATION)
+                .build(key -> new HashMap<>());
+        
+        this.cancellationsCache = Caffeine.newBuilder().expireAfterAccess(CACHE_DURATION).build();
     }
     
     @Override
@@ -50,12 +76,20 @@ public class AlertHandler implements IMessageHandler {
                             massCancellation.getAffectedRoutesList().stream().map(
                                     InternalMessages.Bulletin.AffectedEntity::getEntityId)).collect(Collectors.toList());
                     log.info("Affected routes: {}", routeIds);
-                    cancellationDataList = BulletinUtils.parseCancellationDataFromBulletins(massCancellations, digitransitDeveloperApiUri);
+                    
+                    for (InternalMessages.Bulletin massCancellation : massCancellations) {
+                        List<CancellationData> bulletinCancellations = BulletinUtils.createTripCancellations(massCancellation, digitransitDeveloperApiUri);
+                        cancellationDataList.addAll(BulletinUtils.processBulletinCancellations(
+                                massCancellation.getBulletinId(), bulletinCancellations,
+                                bulletinsCache, cancellationStatusCache, cancellationsCache));
+                    }
+                    
                     log.info("Added {} cancellations from mass cancellation service alert", cancellationDataList.size());
                 }
             } else if (TransitdataSchema.hasProtobufSchema(message, TransitdataProperties.ProtobufSchema.InternalMessagesTripCancellation)) {
                 InternalMessages.TripCancellation tripCancellation = InternalMessages.TripCancellation.parseFrom(message.getData());
-                CancellationData data = new CancellationData(tripCancellation, message.getEventTime(), message.getKey(), -1);
+                CancellationData data = new CancellationData(
+                        tripCancellation, message.getEventTime(), message.getKey(), -1, null);
                 cancellationDataList.add(data);
             } else {
                 throw new Exception("Invalid protobuf schema");

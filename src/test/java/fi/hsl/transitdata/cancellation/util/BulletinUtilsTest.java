@@ -1,6 +1,9 @@
 package fi.hsl.transitdata.cancellation.util;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import fi.hsl.common.transitdata.proto.InternalMessages;
+import fi.hsl.transitdata.cancellation.AlertHandler;
 import fi.hsl.transitdata.cancellation.domain.CancellationData;
 import org.junit.Test;
 import org.mockito.MockedStatic;
@@ -8,17 +11,20 @@ import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 
 public class BulletinUtilsTest {
     @Test
-    public void filterMassCancellationsFromEmptyBulletinsList() {
+    public void testFilterMassCancellationsFromEmptyBulletinsList() {
         List<InternalMessages.Bulletin> inputBulletins = new ArrayList<>();
         List<InternalMessages.Bulletin> outputBulletins = BulletinUtils.filterMassCancellationsFromBulletins(inputBulletins);
         
@@ -26,7 +32,7 @@ public class BulletinUtilsTest {
     }
     
     @Test
-    public void filterMassCancellations() {
+    public void testFilterMassCancellations() {
         List<InternalMessages.Bulletin> outputBulletins = BulletinUtils.filterMassCancellationsFromBulletins(initializeTestBulletin());
         
         assertTrue(outputBulletins.size() == 2);
@@ -84,6 +90,73 @@ public class BulletinUtilsTest {
         assertEquals("07:42:00", BulletinUtils.formatTime("0742"));
     }
     
+    @Test
+    public void testProcessBulletinCancellations_NewBulletin_NoOtherBulletins() {
+        Cache<String, Map<String, InternalMessages.TripCancellation.Status>> bulletinsCache = createEmptyBulletinsCache();
+        Cache<String, Map<String, InternalMessages.TripCancellation.Status>> cancellationStatusCache = createEmptycancellationStatusCache();
+        /* TODO: fix
+        List<CancellationData> cancellationsToBeSent = BulletinUtils.processBulletinCancellations(
+                "bulletin_00", createCancellations(), bulletinsCache, cancellationStatusCache);
+        
+        assertEquals(10, cancellationsToBeSent.size());
+        assertEquals(10, bulletinsCache.getIfPresent("bulletin_00").size());
+        assertEquals(10, cancellationStatusCache.asMap().keySet().size());
+         */
+    }
+    
+    @Test
+    public void testProcessBulletinCancellations_NewBulletin_OtherBulletinsExists() {
+        Cache<String, Map<String, InternalMessages.TripCancellation.Status>> bulletinsCache = createPopulatedBulletinsCache();
+        Cache<String, Map<String, InternalMessages.TripCancellation.Status>> cancellationStatusCache = createPopulatedcancellationStatusCache();
+        /* TODO: fix
+        List<CancellationData> cancellationsToBeSent = BulletinUtils.processBulletinCancellations(
+                "bulletin_00", createCancellations(), bulletinsCache, cancellationStatusCache);
+        
+        assertEquals(7, cancellationsToBeSent.size());
+        //assertEquals(10, bulletinsCache.stats().loadCount());
+        //assertEquals(10, cancellationStatusCache.stats().loadCount());
+         */
+    }
+    
+    @Test
+    public void testBulletinExistsInCache() {
+        Cache<String, Map<String, InternalMessages.TripCancellation.Status>> bulletinsCache = createPopulatedBulletinsCache();
+        
+        assertTrue(BulletinUtils.bulletinExistsInCache("bulletin_01", bulletinsCache));
+        assertTrue(BulletinUtils.bulletinExistsInCache("bulletin_02", bulletinsCache));
+        assertFalse(BulletinUtils.bulletinExistsInCache("bulletin_999", bulletinsCache));
+    }
+    
+    @Test
+    public void testHasActiveCancellationInCache() {
+        Cache<String, Map<String, InternalMessages.TripCancellation.Status>> cancellationStatusCache = createPopulatedcancellationStatusCache();
+        
+        assertTrue(BulletinUtils.hasActiveCancellationInCache("trip_07", cancellationStatusCache));
+        assertFalse(BulletinUtils.hasActiveCancellationInCache("trip_09", cancellationStatusCache));
+        assertTrue(BulletinUtils.hasActiveCancellationInCache("trip_12", cancellationStatusCache));
+        assertFalse(BulletinUtils.hasActiveCancellationInCache("trip_999", cancellationStatusCache));
+    }
+    
+    @Test
+    public void testProcessBulletinCancellations_BulletinValidUntilShortened_NoOtherBulletins() {
+    
+    }
+    
+    @Test
+    public void testProcessBulletinCancellations_BulletinValidUntilShortened_OtherBulletinsExists() {
+    
+    }
+    
+    @Test
+    public void testProcessBulletinCancellations_BulletinValidUntilExtended_NoOtherBulletins() {
+    
+    }
+    
+    @Test
+    public void testProcessBulletinCancellations_BulletinValidUntilExtended_OtherBulletinsExists() {
+    
+    }
+    
     private static List<InternalMessages.Bulletin> initializeTestBulletin() {
         InternalMessages.Bulletin bulletinMassCancellation1 = createBulletin(
                 InternalMessages.Bulletin.Impact.CANCELLED,
@@ -136,5 +209,111 @@ public class BulletinUtilsTest {
                 .build();
         
         return bulletin;
+    }
+    
+    private static List<CancellationData> createCancellations() {
+        List<CancellationData> cancellations = new ArrayList<>();
+        cancellations.add(createCancellation("trip_00"));
+        cancellations.add(createCancellation("trip_01"));
+        cancellations.add(createCancellation("trip_02"));
+        cancellations.add(createCancellation("trip_03"));
+        cancellations.add(createCancellation("trip_04"));
+        cancellations.add(createCancellation("trip_05"));
+        cancellations.add(createCancellation("trip_06"));
+        cancellations.add(createCancellation("trip_07"));
+        cancellations.add(createCancellation("trip_08"));
+        cancellations.add(createCancellation("trip_09"));
+        return cancellations;
+    }
+    
+    private static CancellationData createCancellation(String tripId) {
+        return new CancellationData(null, System.currentTimeMillis(), null, 1000, tripId);
+    }
+    
+    private static Cache<String, Map<String, InternalMessages.TripCancellation.Status>> createEmptyBulletinsCache() {
+        Cache<String, Map<String, InternalMessages.TripCancellation.Status>> bulletinsCache;
+        
+        bulletinsCache = Caffeine.newBuilder()
+                .expireAfterAccess(AlertHandler.CACHE_DURATION)
+                .build(key -> new HashMap<>());
+        
+        return bulletinsCache;
+    }
+    
+    private static Cache<String, Map<String, InternalMessages.TripCancellation.Status>> createEmptycancellationStatusCache() {
+        Cache<String, Map<String, InternalMessages.TripCancellation.Status>> cancellationStatusCache;
+        
+        cancellationStatusCache = Caffeine.newBuilder()
+                .expireAfterAccess(AlertHandler.CACHE_DURATION)
+                .build(key -> new HashMap<>());
+        
+        return cancellationStatusCache;
+    }
+    
+    private static Cache<String, Map<String, InternalMessages.TripCancellation.Status>> createPopulatedBulletinsCache() {
+        Cache<String, Map<String, InternalMessages.TripCancellation.Status>> bulletinsCache;
+        
+        bulletinsCache = Caffeine.newBuilder()
+                .expireAfterAccess(AlertHandler.CACHE_DURATION)
+                .build(key -> new HashMap<>());
+        
+        Map<String, InternalMessages.TripCancellation.Status> tripStatusMap01 = new HashMap<>();
+        tripStatusMap01.put("trip_07", InternalMessages.TripCancellation.Status.CANCELED);
+        tripStatusMap01.put("trip_08", InternalMessages.TripCancellation.Status.CANCELED);
+        tripStatusMap01.put("trip_09", InternalMessages.TripCancellation.Status.RUNNING);
+        tripStatusMap01.put("trip_10", InternalMessages.TripCancellation.Status.CANCELED);
+        tripStatusMap01.put("trip_11", InternalMessages.TripCancellation.Status.CANCELED);
+        tripStatusMap01.put("trip_12", InternalMessages.TripCancellation.Status.CANCELED);
+        
+        // KEY: bulletinId, VALUE: Map<KEY: tripId, VALUE: tripCancellationStatus>
+        bulletinsCache.put("bulletin_01", tripStatusMap01);
+        
+        Map<String, InternalMessages.TripCancellation.Status> tripStatusMap02 = new HashMap<>();
+        tripStatusMap02.put("trip_11", InternalMessages.TripCancellation.Status.CANCELED);
+        tripStatusMap02.put("trip_12", InternalMessages.TripCancellation.Status.RUNNING);
+        tripStatusMap02.put("trip_13", InternalMessages.TripCancellation.Status.CANCELED);
+        tripStatusMap02.put("trip_14", InternalMessages.TripCancellation.Status.CANCELED);
+        
+        // KEY: bulletinId, VALUE: Map<KEY: tripId, VALUE: tripCancellationStatus>
+        bulletinsCache.put("bulletin_02", tripStatusMap02);
+        
+        return bulletinsCache;
+    }
+    
+    private static Cache<String, Map<String, InternalMessages.TripCancellation.Status>> createPopulatedcancellationStatusCache() {
+        Cache<String, Map<String, InternalMessages.TripCancellation.Status>> cancellationStatusCache;
+        
+        cancellationStatusCache = Caffeine.newBuilder()
+                .expireAfterAccess(AlertHandler.CACHE_DURATION)
+                .build(key -> new HashMap<>());
+        
+        Map<String, InternalMessages.TripCancellation.Status> bulletinStatusMap01Canceled = new HashMap<>();
+        bulletinStatusMap01Canceled.put("bulletin_01", InternalMessages.TripCancellation.Status.CANCELED);
+        
+        Map<String, InternalMessages.TripCancellation.Status> bulletinStatusMap01Running = new HashMap<>();
+        bulletinStatusMap01Running.put("bulletin_01", InternalMessages.TripCancellation.Status.RUNNING);
+        
+        Map<String, InternalMessages.TripCancellation.Status> bulletinStatusMap0102Canceled = new HashMap<>();
+        bulletinStatusMap0102Canceled.put("bulletin_01", InternalMessages.TripCancellation.Status.CANCELED);
+        bulletinStatusMap0102Canceled.put("bulletin_02", InternalMessages.TripCancellation.Status.CANCELED);
+        
+        Map<String, InternalMessages.TripCancellation.Status> bulletinStatusMap0102Both = new HashMap<>();
+        bulletinStatusMap0102Both.put("bulletin_01", InternalMessages.TripCancellation.Status.CANCELED);
+        bulletinStatusMap0102Both.put("bulletin_02", InternalMessages.TripCancellation.Status.RUNNING);
+        
+        Map<String, InternalMessages.TripCancellation.Status> bulletinStatusMap02Canceled = new HashMap<>();
+        bulletinStatusMap02Canceled.put("bulletin_02", InternalMessages.TripCancellation.Status.CANCELED);
+        
+        // KEY: tripId, VALUE: Map<KEY: bulletinId, VALUE: tripCancellationStatus>
+        cancellationStatusCache.put("trip_07", bulletinStatusMap01Canceled);
+        cancellationStatusCache.put("trip_08", bulletinStatusMap01Canceled);
+        cancellationStatusCache.put("trip_09", bulletinStatusMap01Running);
+        cancellationStatusCache.put("trip_10", bulletinStatusMap01Canceled);
+        cancellationStatusCache.put("trip_11", bulletinStatusMap0102Canceled);
+        cancellationStatusCache.put("trip_12", bulletinStatusMap0102Both);
+        cancellationStatusCache.put("trip_13", bulletinStatusMap02Canceled);
+        cancellationStatusCache.put("trip_14", bulletinStatusMap02Canceled);
+        
+        return cancellationStatusCache;
     }
 }

@@ -7,12 +7,17 @@ public class CancellationData {
     public final long timestampEpochMs;
     public final String dvjId;
     public final long deviationCaseId;
+    private final String tripId; // this is needed only internally in transitdata-cancellation-processor
+    private boolean cancellationOfCancellation; // this is needed only internally in transitdata-cancellation-processor
 
-    public CancellationData(InternalMessages.TripCancellation payload, long timestampEpochMs, String dvjId, long deviationCaseId) {
+    public CancellationData(InternalMessages.TripCancellation payload, long timestampEpochMs, String dvjId,
+                            long deviationCaseId, String tripId) {
         this.payload = payload;
         this.timestampEpochMs = timestampEpochMs;
         this.dvjId = dvjId;
         this.deviationCaseId = deviationCaseId;
+        this.tripId = tripId;
+        this.cancellationOfCancellation = false;
     }
 
     public String getDvjId() {
@@ -25,5 +30,17 @@ public class CancellationData {
 
     public long getTimestamp() {
         return timestampEpochMs;
+    }
+    
+    public String getTripId() {
+        return tripId;
+    }
+    
+    public boolean isCancellationOfCancellation() {
+        return cancellationOfCancellation;
+    }
+    
+    public void setCancellationOfCancellation(boolean cancellationOfCancellation) {
+        this.cancellationOfCancellation = cancellationOfCancellation;
     }
 }
