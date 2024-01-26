@@ -33,10 +33,10 @@ public class BulletinUtils {
         List<CancellationData> tripCancellations = new ArrayList<>();
         
         LocalDateTime validFrom = Instant.ofEpochMilli(
-                massCancellation.getValidFromUtcMs()).atZone(ZoneId.systemDefault()).toLocalDateTime();
+                massCancellation.getValidFromUtcMs()).atZone(ZoneId.of("Europe/Helsinki")).toLocalDateTime();
         
         LocalDateTime validTo = Instant.ofEpochMilli(
-                massCancellation.getValidToUtcMs()).atZone(ZoneId.systemDefault()).toLocalDateTime();
+                massCancellation.getValidToUtcMs()).atZone(ZoneId.of("Europe/Helsinki")).toLocalDateTime();
         
         List<String> routeIds = massCancellation.getAffectedRoutesList().stream().
                 map(x -> x.getEntityId()).collect(Collectors.toList());
