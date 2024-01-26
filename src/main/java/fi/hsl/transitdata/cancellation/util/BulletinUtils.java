@@ -104,4 +104,25 @@ public class BulletinUtils {
         String minutes = timeAsString.substring(2, 4);
         return hours + ":" + minutes + ":00";
     }
+    
+    public static String getBulletinsLog(List<InternalMessages.Bulletin> massCancellations) {
+        StringBuilder bulletinsLog = new StringBuilder("");
+        
+        for (InternalMessages.Bulletin bulletin : massCancellations) {
+            LocalDateTime validFrom = Instant.ofEpochMilli(
+                    bulletin.getValidFromUtcMs()).atZone(ZoneId.of("Europe/Helsinki")).toLocalDateTime();
+            
+            LocalDateTime validTo = Instant.ofEpochMilli(
+                    bulletin.getValidToUtcMs()).atZone(ZoneId.of("Europe/Helsinki")).toLocalDateTime();
+            
+            bulletinsLog.append(" -BULLETIN-");
+            bulletinsLog.append(" Id: " + bulletin.getBulletinId());
+            bulletinsLog.append(", Valid from: " + validFrom);
+            bulletinsLog.append(", Valid to: " + validTo);
+            bulletinsLog.append(", Affected routes: " + bulletin.getAffectedRoutesList());
+            bulletinsLog.append(".");
+        }
+        
+        return bulletinsLog.toString();
+    }
 }
