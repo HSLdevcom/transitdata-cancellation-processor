@@ -2,6 +2,8 @@ package fi.hsl.transitdata.cancellation.util;
 
 import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.cancellation.domain.CancellationData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -11,6 +13,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class BulletinUtils {
+    
+    private static final Logger log = LoggerFactory.getLogger(BulletinUtils.class);
 
     public static List<InternalMessages.Bulletin> filterMassCancellationsFromBulletins(List<InternalMessages.Bulletin> bulletins) {
         return bulletins.stream().filter(
@@ -81,6 +85,7 @@ public class BulletinUtils {
             tripCancellations.add(data);
         }
         
+        log.info("Added {} cancellations from mass cancellation bulletin.{}", tripCancellations.size(), getBulletinLog(massCancellation));
         return tripCancellations;
     }
     
@@ -105,24 +110,20 @@ public class BulletinUtils {
         return hours + ":" + minutes + ":00";
     }
     
-    public static String getBulletinsLog(List<InternalMessages.Bulletin> massCancellations) {
-        StringBuilder bulletinsLog = new StringBuilder("");
+    public static String getBulletinLog(InternalMessages.Bulletin massCancellation) {
+        StringBuilder bulletinLog = new StringBuilder(" BULLETIN");
         
-        for (InternalMessages.Bulletin bulletin : massCancellations) {
-            LocalDateTime validFrom = Instant.ofEpochMilli(
-                    bulletin.getValidFromUtcMs()).atZone(ZoneId.of("Europe/Helsinki")).toLocalDateTime();
-            
-            LocalDateTime validTo = Instant.ofEpochMilli(
-                    bulletin.getValidToUtcMs()).atZone(ZoneId.of("Europe/Helsinki")).toLocalDateTime();
-            
-            bulletinsLog.append(" -BULLETIN-");
-            bulletinsLog.append(" Id: " + bulletin.getBulletinId());
-            bulletinsLog.append(", Valid from: " + validFrom);
-            bulletinsLog.append(", Valid to: " + validTo);
-            bulletinsLog.append(", Affected routes: " + bulletin.getAffectedRoutesList());
-            bulletinsLog.append(".");
-        }
+        LocalDateTime validFrom = Instant.ofEpochMilli(
+                massCancellation.getValidFromUtcMs()).atZone(ZoneId.of("Europe/Helsinki")).toLocalDateTime();
         
-        return bulletinsLog.toString();
+        LocalDateTime validTo = Instant.ofEpochMilli(
+                massCancellation.getValidToUtcMs()).atZone(ZoneId.of("Europe/Helsinki")).toLocalDateTime();
+        
+        bulletinLog.append(" Id: " + massCancellation.getBulletinId());
+        bulletinLog.append(", Valid from: " + validFrom);
+        bulletinLog.append(", Valid to: " + validTo);
+        bulletinLog.append(", Affected routes: " + massCancellation.getAffectedRoutesList());
+        
+        return bulletinLog.toString();
     }
 }
