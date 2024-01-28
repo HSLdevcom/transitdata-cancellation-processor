@@ -59,15 +59,12 @@ public class AlertHandler implements IMessageHandler {
                 
                 if (massCancellations.isEmpty()) {
                     log.info("No mass cancellation bulletins, total number of bulletins: " + serviceAlert.getBulletinsList());
-                } else if (massCancellations.size() > 1) {
-                    log.error("This version of transitdata-cancellation-processor does not support more than one mass cancellation bulletins in a service alert");
                 } else {
                     List<String> routeIds = massCancellations.stream().flatMap(massCancellation ->
                             massCancellation.getAffectedRoutesList().stream().map(
                                     InternalMessages.Bulletin.AffectedEntity::getEntityId)).collect(Collectors.toList());
                     log.info("Affected routes: {}", routeIds);
-                    List<CancellationData> cancellationDataTempList = BulletinUtils.parseCancellationDataFromBulletins(massCancellations, digitransitDeveloperApiUri);
-                    cancellationDataList = CacheUtils.handleBulletinCancellations(massCancellations.get(0).getBulletinId(), cancellationDataTempList, bulletinsCache);
+                    cancellationDataList = BulletinUtils.parseCancellationDataFromBulletins(massCancellations, digitransitDeveloperApiUri);
                     log.info("Added {} cancellations from mass cancellation service alert", cancellationDataList.size());
                 }
             } else if (TransitdataSchema.hasProtobufSchema(message, TransitdataProperties.ProtobufSchema.InternalMessagesTripCancellation)) {
