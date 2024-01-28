@@ -1,5 +1,7 @@
 package fi.hsl.transitdata.cancellation;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import fi.hsl.common.pulsar.IMessageHandler;
 import fi.hsl.common.pulsar.PulsarApplicationContext;
 import fi.hsl.common.transitdata.TransitdataProperties;
@@ -8,10 +10,13 @@ import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.cancellation.domain.CancellationData;
 import fi.hsl.transitdata.cancellation.util.BulletinUtils;
 
+import fi.hsl.transitdata.cancellation.util.CacheUtils;
 import org.apache.pulsar.client.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,6 +26,11 @@ public class AlertHandler implements IMessageHandler {
     private final Consumer<byte[]> consumer;
     private final Producer<byte[]> producer;
     
+    public static final Duration CACHE_DURATION = Duration.of(4, ChronoUnit.HOURS);
+    
+    // KEY: bulletinId, VALUE: Map<KEY: tripId, VALUE: cancellationData>
+    private final Cache<String, Map<String, CancellationData>> bulletinsCache;
+    
     private final String digitransitDeveloperApiUri;
 
     public AlertHandler(final PulsarApplicationContext context, String digitransitDeveloperApiUri) {
@@ -28,6 +38,10 @@ public class AlertHandler implements IMessageHandler {
         this.producer = context.getSingleProducer();
 
         this.digitransitDeveloperApiUri = digitransitDeveloperApiUri;
+        
+        this.bulletinsCache = Caffeine.newBuilder()
+                .expireAfterAccess(CACHE_DURATION)
+                .build(key -> new HashMap<>());
     }
     
     @Override
@@ -45,12 +59,15 @@ public class AlertHandler implements IMessageHandler {
                 
                 if (massCancellations.isEmpty()) {
                     log.info("No mass cancellation bulletins, total number of bulletins: " + serviceAlert.getBulletinsList());
+                } else if (massCancellations.size() > 1) {
+                    log.error("This version of transitdata-cancellation-processor does not support more than one mass cancellation bulletins in a service alert");
                 } else {
                     List<String> routeIds = massCancellations.stream().flatMap(massCancellation ->
                             massCancellation.getAffectedRoutesList().stream().map(
                                     InternalMessages.Bulletin.AffectedEntity::getEntityId)).collect(Collectors.toList());
                     log.info("Affected routes: {}", routeIds);
-                    cancellationDataList = BulletinUtils.parseCancellationDataFromBulletins(massCancellations, digitransitDeveloperApiUri);
+                    List<CancellationData> cancellationDataTempList = BulletinUtils.parseCancellationDataFromBulletins(massCancellations, digitransitDeveloperApiUri);
+                    cancellationDataList = CacheUtils.handleBulletinCancellations(massCancellations.get(0).getBulletinId(), cancellationDataTempList, bulletinsCache);
                     log.info("Added {} cancellations from mass cancellation service alert", cancellationDataList.size());
                 }
             } else if (TransitdataSchema.hasProtobufSchema(message, TransitdataProperties.ProtobufSchema.InternalMessagesTripCancellation)) {
@@ -61,7 +78,6 @@ public class AlertHandler implements IMessageHandler {
                 throw new Exception("Invalid protobuf schema");
             }
             
-            // TODO: is cache of trip cancellations needed?
             // Cachesta voidaan katsoa onko ko. peruutus jo lähetetty
             // Jos peruutuksen linjoja muutetaan, voidaan cachesta katsoa mitkä lähdöt voidaan ottaa pois peruutuksista
             sendCancellations(cancellationDataList);
