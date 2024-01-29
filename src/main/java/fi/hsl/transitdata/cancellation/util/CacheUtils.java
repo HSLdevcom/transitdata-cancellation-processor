@@ -105,7 +105,7 @@ public class CacheUtils {
             cancellationDataList.addAll(cancelledCancellationDataList);
             
             bulletinsCache.put(bulletinId, newTripCancellationDataMap);
-            log.info("Bulletin modified. Earlier version had {} cancellations. New version has {} cancellations: "
+            log.info("Bulletin modified. Previous version had {} cancellations. New version has {} cancellations: "
                     + "unchanged {}, new {}, cancellations-of-cancellations {}",
                     originalNumberOfCancellationsInCache,
                     modifiedCancellationDataList.size(),

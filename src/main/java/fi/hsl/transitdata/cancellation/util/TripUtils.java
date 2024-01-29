@@ -12,9 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static io.smallrye.graphql.client.core.Argument.arg;
@@ -102,7 +100,57 @@ public class TripUtils {
                 dateAsString -> getTripInfos(dateAsString, routeIds, digitransitDeveloperApiUri).stream()
         ).collect(Collectors.toList());
         
-        return filterTripInfos(tripInfos, validFrom, validTo);
+        List<InternalMessages.TripInfo> filteredTripInfos = filterTripInfos(tripInfos, validFrom, validTo);
+        return removeDuplicates(filteredTripInfos);
+    }
+    
+    private static String getTripId(String originalTripId) {
+        String modifiedTripId;
+        
+        if (originalTripId.contains("Ma")) {
+            modifiedTripId = originalTripId.replaceFirst("Ma", "MaTiKeToPe");
+        } else if (originalTripId.contains("Ti")) {
+            modifiedTripId = originalTripId.replaceFirst("Ti", "MaTiKeToPe");
+        } else if (originalTripId.contains("Ke")) {
+            modifiedTripId = originalTripId.replaceFirst("Ke", "MaTiKeToPe");
+        } else if (originalTripId.contains("To")) {
+            modifiedTripId = originalTripId.replaceFirst("To", "MaTiKeToPe");
+        } else if (originalTripId.contains("Pe")) {
+            modifiedTripId = originalTripId.replaceFirst("Pe", "MaTiKeToPe");
+        } else if (originalTripId.contains("La")) {
+            modifiedTripId = originalTripId.replaceFirst("La", "LaSu");
+        } else if (originalTripId.contains("Su")) {
+            modifiedTripId = originalTripId.replaceFirst("Su", "LaSu");
+        } else {
+            modifiedTripId = originalTripId;
+        }
+        
+        return modifiedTripId;
+    }
+    
+    private static List<InternalMessages.TripInfo> removeDuplicates(List<InternalMessages.TripInfo> trips) {
+        Set<String> seen = new HashSet<>();
+        List<InternalMessages.TripInfo> tripsNoDuplicates = new ArrayList<>();
+        for (InternalMessages.TripInfo trip : trips) {
+            String key = trip.getRouteId() + "--" + trip.getOperatingDay() + "--" + trip.getStartTime();
+            if (!seen.contains(key)) {
+                seen.add(key);
+                tripsNoDuplicates.add(trip);
+            }
+        }
+        
+        List<InternalMessages.TripInfo> tripsNewIds = new ArrayList<>();
+        
+        for (InternalMessages.TripInfo trip : tripsNoDuplicates) {
+            InternalMessages.TripInfo.Builder builder = InternalMessages.TripInfo.newBuilder();
+            builder.setRouteId(trip.getRouteId());
+            builder.setTripId(getTripId(trip.getTripId()));
+            builder.setOperatingDay(trip.getOperatingDay());
+            builder.setStartTime(trip.getStartTime());
+            builder.setDirectionId(Integer.valueOf(trip.getDirectionId()));
+            tripsNewIds.add(builder.build());
+        }
+        return tripsNewIds;
     }
     
     /**
