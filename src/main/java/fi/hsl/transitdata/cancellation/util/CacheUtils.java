@@ -37,6 +37,7 @@ public class CacheUtils {
         
         // bulletin doesn't exist in the cache
         if (tripCancellationDataInCache == null || tripCancellationDataInCache.isEmpty()) {
+            tripCancellationDataInCache = new HashMap<>();
             cancellationDataList = modifiedCancellationDataList;
             
             for (CancellationData cancellationData : modifiedCancellationDataList) {
