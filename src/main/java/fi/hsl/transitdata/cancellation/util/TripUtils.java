@@ -132,7 +132,8 @@ public class TripUtils {
         Set<String> seen = new HashSet<>();
         List<InternalMessages.TripInfo> tripsNoDuplicates = new ArrayList<>();
         for (InternalMessages.TripInfo trip : trips) {
-            String key = trip.getRouteId() + "--" + trip.getOperatingDay() + "--" + trip.getStartTime();
+            String key = trip.getRouteId() + "--" + trip.getOperatingDay() + "--"
+                    + trip.getStartTime() + "--" + trip.getDirectionId();
             if (!seen.contains(key)) {
                 seen.add(key);
                 tripsNoDuplicates.add(trip);
@@ -147,7 +148,7 @@ public class TripUtils {
             builder.setTripId(getTripId(trip.getTripId()));
             builder.setOperatingDay(trip.getOperatingDay());
             builder.setStartTime(trip.getStartTime());
-            builder.setDirectionId(Integer.valueOf(trip.getDirectionId()));
+            builder.setDirectionId(trip.getDirectionId());
             tripsNewIds.add(builder.build());
         }
         return tripsNewIds;
