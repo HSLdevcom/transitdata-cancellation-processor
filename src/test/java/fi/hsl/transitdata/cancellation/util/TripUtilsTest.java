@@ -57,7 +57,12 @@ public class TripUtilsTest {
         
         assertFalse(outputTripIds.contains("HSL:4611_20240104_Ti_2_1731"));
         assertFalse(outputTripIds.contains("HSL:1079_20240104_La_1_1950"));
-        
+    }
+    
+    @Test
+    public void testGetTripId() {
+        assertEquals("HSL:1071_20240126_MaTiKeToPe_2_1305", TripUtils.getTripId("HSL:1071_20240126_Ke_2_1305"));
+        assertEquals("HSL:1071_20240126_LaSu_2_2307", TripUtils.getTripId("HSL:1071_20240126_La_2_2307"));
     }
     
     public static InternalMessages.TripInfo createTripInfo(

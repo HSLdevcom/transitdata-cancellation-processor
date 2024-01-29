@@ -104,7 +104,7 @@ public class TripUtils {
         return removeDuplicates(filteredTripInfos);
     }
     
-    private static String getTripId(String originalTripId) {
+    static String getTripId(String originalTripId) {
         String modifiedTripId;
         
         if (originalTripId.contains("Ma")) {
