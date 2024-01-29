@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -92,15 +93,53 @@ public class TimeUtils {
      * @return Time as string in format 'HHMM'
      */
     public static String getTimeAsString(Integer scheduledDeparture) {
-        String timeAsString = DurationFormatUtils.formatDuration(scheduledDeparture * 1000, "HHmm", true);
-        String hourAsString = timeAsString.substring(0, 2);
-        int hour = Integer.valueOf(hourAsString);
+        return DurationFormatUtils.formatDuration(scheduledDeparture * 1000, "HHmm", true);
+    }
+    
+    /**
+     * Convert given LocalDateTime object into two strings according to 30 hour clock. Examples:
+     * Input: '2024-01-29 15:50', Output: KEY '20240129', VALUE '1550'
+     * Input: '2024-01-30 00:29', Output: KEY '20240129', VALUE '2429'
+     * @param someDateTime datetime in LocalDateTime format
+     * @return KEY: date (e.g. "2901"), VALUE: time (e.g. "1542")
+     */
+    public static AbstractMap.SimpleEntry<String, String> convertInto30hClockStrings(LocalDateTime someDateTime) {
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HHmm");
         
-        if (hour >= 24) { // For example, if time is '2429', it must be replaced with '0029'
-            int fixedHour = hour-24;
-            timeAsString = timeAsString.replaceFirst(hourAsString, "0" + fixedHour);
+        if (someDateTime.getHour() < 6) {
+            LocalDateTime newDateTime = someDateTime.minusDays(1);
+            int localTime = Integer.valueOf(newDateTime.format(timeFormatter));
+            String newLocalTime = String.valueOf(2400 + localTime);
+            return new AbstractMap.SimpleEntry<>(newDateTime.format(dateFormatter), newLocalTime);
         }
         
-        return timeAsString;
+        return new AbstractMap.SimpleEntry<>(someDateTime.format(dateFormatter), someDateTime.format(timeFormatter));
+    }
+    
+    /**
+     * Return boolean value that indicates whether the given timestamp (operatingDay + startTime) is between the
+     * validFrom and validTo timestamps.
+     * @param operatingDay date e.g. '20240129'
+     * @param startTime time e.g. '1550'
+     * @param validFromAsSimpleEntry KEY: date (e.g. "20242901"), VALUE: time (e.g. "1542")
+     * @param validToAsSimpleEntry KEY: date (e.g. "20242901"), VALUE: time (e.g. "1542")
+     * @return
+     */
+    public static boolean isBetween(
+            String operatingDay,
+            String startTime,
+            AbstractMap.SimpleEntry<String, String> validFromAsSimpleEntry,
+            AbstractMap.SimpleEntry<String, String> validToAsSimpleEntry) {
+        
+        long operatingTimestamp = Long.valueOf(operatingDay + startTime);
+        long validFrom = Long.valueOf(validFromAsSimpleEntry.getKey() + validFromAsSimpleEntry.getValue());
+        long validTo = Long.valueOf(validToAsSimpleEntry.getKey() + validToAsSimpleEntry.getValue());
+        
+        if (operatingTimestamp >= validFrom && operatingTimestamp <= validTo) {
+            return true;
+        }
+        
+        return false;
     }
 }

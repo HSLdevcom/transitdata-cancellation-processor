@@ -161,19 +161,17 @@ public class TripUtils {
     static List<InternalMessages.TripInfo> filterTripInfos(
             List<InternalMessages.TripInfo> inputTripInfos, LocalDateTime validFrom, LocalDateTime validTo) {
         
-        LocalDateTime tripInfoMinimumDate = inputTripInfos.stream().map(tripInfo -> TimeUtils.getDate(
-                tripInfo.getOperatingDay(), tripInfo.getStartTime())).min(LocalDateTime::compareTo).orElse(null);
+        // KEY: date (e.g. "20242901"), VALUE: time (e.g. "1542")
+        AbstractMap.SimpleEntry<String, String> validFromAsSimpleEntry = TimeUtils.convertInto30hClockStrings(validFrom);
+        AbstractMap.SimpleEntry<String, String> validToAsSimpleEntry = TimeUtils.convertInto30hClockStrings(validTo);
         
-        LocalDateTime tripInfoMaximumDate = inputTripInfos.stream().map(tripInfo -> TimeUtils.getDate(
-                tripInfo.getOperatingDay(), tripInfo.getStartTime())).max(LocalDateTime::compareTo).orElse(null);
+        List<InternalMessages.TripInfo> outputTripInfos = inputTripInfos.stream().filter(tripInfo ->
+                TimeUtils.isBetween(tripInfo.getOperatingDay(), tripInfo.getStartTime(),
+                        validFromAsSimpleEntry, validToAsSimpleEntry)).collect(Collectors.toList());
         
-        List<InternalMessages.TripInfo> outputTripInfos = inputTripInfos.stream().filter(tripInfo -> {
-            LocalDateTime tripInfoDate = TimeUtils.getDate(tripInfo.getOperatingDay(), tripInfo.getStartTime());
-            return tripInfoDate.isAfter(validFrom) && tripInfoDate.isBefore(validTo);
-        }).collect(Collectors.toList());
+        log.info("There are {} trip infos after filtering (before filtering {} trip infos). validFrom={}, validTo={}, timeZone={}",
+                outputTripInfos.size(), inputTripInfos.size(), validFrom, validTo, TimeZone.getDefault().getDisplayName());
         
-        log.info("There are {} trip infos after filtering (before filtering {} trip infos). validFrom={}, validTo={}, tripInfoMinimumDate={}, tripInfoMaximumDate={}, timeZone={}",
-                outputTripInfos.size(), inputTripInfos.size(), validFrom, validTo, tripInfoMinimumDate, tripInfoMaximumDate, TimeZone.getDefault().getDisplayName());
         return outputTripInfos;
     }
     

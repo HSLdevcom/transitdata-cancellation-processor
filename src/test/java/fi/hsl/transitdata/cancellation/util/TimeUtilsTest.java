@@ -4,8 +4,10 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.AbstractMap;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -133,6 +135,48 @@ public class TimeUtilsTest {
     public void testGetShortTimeAfterMidnight() {
         int secondsSinceMidnight = 88140;
         String timeAsString = TimeUtils.getTimeAsString(secondsSinceMidnight);
-        assertEquals("0029", timeAsString);
+        assertEquals("2429", timeAsString);
+    }
+    
+    @Test
+    public void testConvertInto30hClockStrings() {
+        LocalDateTime localDateTime1550 = LocalDateTime.of(2024, Month.JANUARY, 29, 15, 50, 0);
+        LocalDateTime localDateTime0029 = LocalDateTime.of(2024, Month.JANUARY, 30, 0, 29, 0);
+        LocalDateTime localDateTime0415 = LocalDateTime.of(2024, Month.JANUARY, 30, 4, 15, 0);
+        
+        AbstractMap.SimpleEntry<String, String> timestamp30h_1550 = TimeUtils.convertInto30hClockStrings(localDateTime1550);
+        AbstractMap.SimpleEntry<String, String> timestamp30h_0029 = TimeUtils.convertInto30hClockStrings(localDateTime0029);
+        AbstractMap.SimpleEntry<String, String> timestamp30h_0415 = TimeUtils.convertInto30hClockStrings(localDateTime0415);
+        
+        assertEquals("20240129", timestamp30h_1550.getKey());
+        assertEquals("20240129", timestamp30h_0029.getKey());
+        assertEquals("20240129", timestamp30h_0415.getKey());
+        
+        assertEquals("1550", timestamp30h_1550.getValue());
+        assertEquals("2429", timestamp30h_0029.getValue());
+        assertEquals("2815", timestamp30h_0415.getValue());
+    }
+    
+    @Test
+    public void testIsBetween() {
+        assertTrue(TimeUtils.isBetween(
+                "20240129", "2251",
+                new AbstractMap.SimpleEntry<>("20240129", "0800"),
+                new AbstractMap.SimpleEntry<>("20240130", "0800")));
+        
+        assertFalse(TimeUtils.isBetween(
+                "20240129", "0755",
+                new AbstractMap.SimpleEntry<>("20240129", "0800"),
+                new AbstractMap.SimpleEntry<>("20240130", "0800")));
+        
+        assertTrue(TimeUtils.isBetween(
+                "20240129", "2510",
+                new AbstractMap.SimpleEntry<>("20240129", "0800"),
+                new AbstractMap.SimpleEntry<>("20240130", "0800")));
+        
+        assertFalse(TimeUtils.isBetween(
+                "20240129", "2251",
+                new AbstractMap.SimpleEntry<>("20240129", "2600"),
+                new AbstractMap.SimpleEntry<>("20240130", "0800")));
     }
 }
