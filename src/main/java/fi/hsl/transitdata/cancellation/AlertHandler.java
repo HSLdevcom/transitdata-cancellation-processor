@@ -64,7 +64,13 @@ public class AlertHandler implements IMessageHandler {
                             massCancellation.getAffectedRoutesList().stream().map(
                                     InternalMessages.Bulletin.AffectedEntity::getEntityId)).collect(Collectors.toList());
                     log.info("Affected routes: {}", routeIds);
-                    cancellationDataList = BulletinUtils.parseCancellationDataFromBulletins(massCancellations, digitransitDeveloperApiUri);
+                    for (InternalMessages.Bulletin massCancellation : massCancellations) {
+                        List<CancellationData> bulletinCancellations =
+                                BulletinUtils.createTripCancellations(massCancellation, digitransitDeveloperApiUri);
+                        cancellationDataList.addAll(
+                                CacheUtils.handleBulletinCancellations(massCancellation.getBulletinId(),
+                                        bulletinCancellations, bulletinsCache));
+                    }
                     log.info("Added {} cancellations from mass cancellation service alert", cancellationDataList.size());
                 }
             } else if (TransitdataSchema.hasProtobufSchema(message, TransitdataProperties.ProtobufSchema.InternalMessagesTripCancellation)) {

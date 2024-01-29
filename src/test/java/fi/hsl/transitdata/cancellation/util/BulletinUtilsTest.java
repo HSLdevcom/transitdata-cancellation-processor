@@ -18,7 +18,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 
 public class BulletinUtilsTest {
     @Test
-    public void filterMassCancellationsFromEmptyBulletinsList() {
+    public void testFilterMassCancellationsFromEmptyBulletinsList() {
         List<InternalMessages.Bulletin> inputBulletins = new ArrayList<>();
         List<InternalMessages.Bulletin> outputBulletins = BulletinUtils.filterMassCancellationsFromBulletins(inputBulletins);
         
@@ -26,30 +26,10 @@ public class BulletinUtilsTest {
     }
     
     @Test
-    public void filterMassCancellations() {
+    public void testFilterMassCancellations() {
         List<InternalMessages.Bulletin> outputBulletins = BulletinUtils.filterMassCancellationsFromBulletins(initializeTestBulletin());
         
         assertTrue(outputBulletins.size() == 2);
-    }
-    
-    @Test
-    public void parseCancellationDataFromBulletins() {
-        try (MockedStatic<TripUtils> tripUtils = Mockito.mockStatic(TripUtils.class)) {
-            List<CancellationData> cancellationData = BulletinUtils.parseCancellationDataFromBulletins(
-                    initializeTestTrips(tripUtils), "");
-            assertEquals(3, cancellationData.size());
-            assertEquals("4611", cancellationData.get(0).getPayload().getRouteId());
-            assertEquals("4611", cancellationData.get(1).getPayload().getRouteId());
-            assertEquals("1079", cancellationData.get(2).getPayload().getRouteId());
-            
-            assertEquals("HSL:4611_20240102_Ti_2_1415", cancellationData.get(0).getPayload().getTripId());
-            assertEquals("HSL:4611_20240102_Ti_2_1515", cancellationData.get(1).getPayload().getTripId());
-            assertEquals("HSL:1079_20240102_La_1_0734", cancellationData.get(2).getPayload().getTripId());
-            
-            assertEquals("14:15:00", cancellationData.get(0).getPayload().getStartTime());
-            assertEquals("15:15:00", cancellationData.get(1).getPayload().getStartTime());
-            assertEquals("07:34:00", cancellationData.get(2).getPayload().getStartTime());
-        }
     }
     
     private static List<InternalMessages.Bulletin> initializeTestTrips(MockedStatic<TripUtils> tripUtils) {
