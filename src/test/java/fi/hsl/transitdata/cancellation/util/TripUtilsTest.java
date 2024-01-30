@@ -1,7 +1,6 @@
 package fi.hsl.transitdata.cancellation.util;
 
 import fi.hsl.common.transitdata.proto.InternalMessages;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.LocalDateTime;
