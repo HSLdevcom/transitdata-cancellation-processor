@@ -5,6 +5,7 @@ secrets/
 *.iws
 *.swp
 target/*
+.DS_Store
 
 *.class
 *.log
