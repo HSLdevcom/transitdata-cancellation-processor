@@ -1,6 +1,5 @@
 package fi.hsl.transitdata.cancellation.util;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -132,7 +131,6 @@ public class TimeUtilsTest {
         assertEquals("0700", timeAsString);
     }
     
-    @Ignore
     @Test
     public void testGetShortTimeAfterMidnight() {
         int secondsSinceMidnight = 88140;
