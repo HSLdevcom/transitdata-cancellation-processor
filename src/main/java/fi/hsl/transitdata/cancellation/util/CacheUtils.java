@@ -39,7 +39,7 @@ public class CacheUtils {
         if (tripCancellationDataInCache == null || tripCancellationDataInCache.isEmpty()) {
             tripCancellationDataInCache = new HashMap<>();
             cancellationDataList = modifiedCancellationDataList;
-            
+
             for (CancellationData cancellationData : modifiedCancellationDataList) {
                 tripCancellationDataInCache.put(cancellationData.getTripId(), cancellationData);
             }
@@ -69,12 +69,6 @@ public class CacheUtils {
                 }
             }
             cancellationDataList.addAll(newCancellationDataList);
-            
-            // check
-            if (numUnchangedCancellations + newCancellationDataList.size() != newTripCancellationDataMap.keySet().size()) {
-                throw new RuntimeException(
-                        "Number of unchanged bulletins plus number of new bulletins is not equal to number trip cancellations in cache");
-            }
             
             // loop cancellations of cache
             for (String tripId : tripCancellationDataInCache.keySet()) {
