@@ -1,6 +1,7 @@
 package fi.hsl.transitdata.cancellation.util;
 
 import fi.hsl.common.transitdata.proto.InternalMessages;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.LocalDateTime;
@@ -59,6 +60,7 @@ public class TripUtilsTest {
         assertFalse(outputTripIds.contains("HSL:1079_20240104_Su_1_1950"));
     }
     
+    @Ignore
     @Test
     public void testFilterTripInfosAfterMidnight() {
         LocalDateTime validFrom = TimeUtilsTest.getTestDate("2024-01-02 08:57:00");

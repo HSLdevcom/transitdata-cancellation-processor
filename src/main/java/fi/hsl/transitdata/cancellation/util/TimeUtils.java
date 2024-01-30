@@ -93,7 +93,16 @@ public class TimeUtils {
      * @return Time as string in format 'HHMM'
      */
     public static String getTimeAsString(Integer scheduledDeparture) {
-        return DurationFormatUtils.formatDuration(scheduledDeparture * 1000, "HHmm", true);
+        String timeAsString = DurationFormatUtils.formatDuration(scheduledDeparture * 1000, "HHmm", true);
+        String hourAsString = timeAsString.substring(0, 2);
+        int hour = Integer.valueOf(hourAsString);
+        
+        if (hour >= 24) { // For example, if time is '2429', it must be replaced with '0029'
+            int fixedHour = hour-24;
+            timeAsString = timeAsString.replaceFirst(hourAsString, "0" + fixedHour);
+        }
+        
+        return timeAsString;
     }
     
     /**
