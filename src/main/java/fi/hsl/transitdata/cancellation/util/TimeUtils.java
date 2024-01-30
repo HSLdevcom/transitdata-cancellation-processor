@@ -1,6 +1,7 @@
 package fi.hsl.transitdata.cancellation.util;
 
 import org.apache.commons.lang3.time.DurationFormatUtils;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,6 +9,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -73,9 +75,29 @@ public class TimeUtils {
      */
     static LocalDateTime getDate(String dateAsString, String timeAsString) {
         String timestampAsString = dateAsString + " " + timeAsString;
-        return LocalDateTime.parse(timestampAsString, DATE_TIME_FORMATTER);
+        try {
+            return LocalDateTime.parse(timestampAsString, DATE_TIME_FORMATTER);
+        } catch (DateTimeParseException e) {
+            return correctForOverMidnightHours(dateAsString, timeAsString);
+        }
     }
-    
+
+    @NotNull
+    private static LocalDateTime correctForOverMidnightHours(String dateAsString, String timeAsString) {
+        String hourAsString = timeAsString.substring(0,2);
+        Integer hourAsInteger = Integer.valueOf(hourAsString);
+
+        Integer rotatedHour = hourAsInteger-24;
+        String newTimeAsString = rotatedHour + timeAsString.substring(2,4);
+
+        if (newTimeAsString.length() < 4) {
+            newTimeAsString = 0 + newTimeAsString;
+        }
+
+        String newTimestampAsString = dateAsString + " " + newTimeAsString;
+        return LocalDateTime.parse(newTimestampAsString, DATE_TIME_FORMATTER).plusDays(1);
+    }
+
     /**
      * Get date in String, for example '20240108'.
      * @param serviceDay Departure date of the trip. Format: Unix timestamp (local time) in seconds.
