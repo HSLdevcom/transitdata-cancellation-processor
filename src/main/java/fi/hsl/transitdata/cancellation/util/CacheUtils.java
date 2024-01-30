@@ -51,7 +51,7 @@ public class CacheUtils {
             cancellationDataList = new ArrayList<>();
             List<CancellationData> newCancellationDataList = new ArrayList<>();
             List<CancellationData> cancelledCancellationDataList = new ArrayList<>();
-            int numUnchangedCancellations = 0;
+            List<CancellationData> unchangedCancellationDataList = new ArrayList<>();
             
             // KEY: tripId, VALUE: cancellationData
             Map<String, CancellationData> newTripCancellationDataMap = new HashMap<>();
@@ -62,13 +62,14 @@ public class CacheUtils {
                 
                 if (tripCancellationDataInCache.containsKey(cancellationData.getTripId())) {
                     // unchanged cancellation
-                    numUnchangedCancellations++;
+                    unchangedCancellationDataList.add(cancellationData);
                 } else {
                     // new cancellation
                     newCancellationDataList.add(cancellationData);
                 }
             }
             cancellationDataList.addAll(newCancellationDataList);
+            cancellationDataList.addAll(unchangedCancellationDataList);
             
             // loop cancellations of cache
             for (String tripId : tripCancellationDataInCache.keySet()) {
@@ -103,7 +104,7 @@ public class CacheUtils {
                     + "unchanged {}, new {}, cancellations-of-cancellations {}",
                     originalNumberOfCancellationsInCache,
                     modifiedCancellationDataList.size(),
-                    numUnchangedCancellations,
+                    unchangedCancellationDataList.size(),
                     newCancellationDataList.size(),
                     cancelledCancellationDataList.size());
         }

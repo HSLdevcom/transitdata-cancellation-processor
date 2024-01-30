@@ -67,13 +67,9 @@ public class AlertHandler implements IMessageHandler {
                     for (InternalMessages.Bulletin massCancellation : massCancellations) {
                         List<CancellationData> bulletinCancellations =
                                 BulletinUtils.createTripCancellations(massCancellation, digitransitDeveloperApiUri);
-                        cancellationDataList.addAll(bulletinCancellations);
-                        /*
                         cancellationDataList.addAll(
                                 CacheUtils.handleBulletinCancellations(massCancellation.getBulletinId(),
                                         bulletinCancellations, bulletinsCache));
-                                        
-                         */
                     }
                     log.info("Added {} cancellations from mass cancellation service alert", cancellationDataList.size());
                 }
