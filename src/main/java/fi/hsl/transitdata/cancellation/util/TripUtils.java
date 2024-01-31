@@ -22,13 +22,14 @@ import static io.smallrye.graphql.client.core.Field.field;
 import static io.smallrye.graphql.client.core.Operation.operation;
 
 public class TripUtils {
-    
+
     private static final Logger log = LoggerFactory.getLogger(TripUtils.class);
-    
+
     /**
      * Get routes using a GraphQL query.
-     * @param date date as string, with format 'YYYYMMDD' (e.g. '20240131')
-     * @param routeIds route identifiers
+     *
+     * @param date                       date as string, with format 'YYYYMMDD' (e.g. '20240131')
+     * @param routeIds                   route identifiers
      * @param digitransitDeveloperApiUri
      * @return
      */
@@ -36,51 +37,64 @@ public class TripUtils {
         List<Route> routes = new ArrayList<>();
         Vertx vertx = Vertx.vertx();
         List<String> fixedRouteIds = addHSLPrefixToRouteIds(routeIds);
-        
+
         DynamicGraphQLClient client = new VertxDynamicGraphQLClientBuilder()
                 .url(digitransitDeveloperApiUri)
                 .vertx(vertx)
                 .build();
-        
-        Document document = document(operation(
-                field(
-                        "routes",
-                        args(arg("ids", fixedRouteIds)),
-                        field("id"),
-                        field("gtfsId"),
-                        field(
-                                "trips",
-                                field("gtfsId"),
-                                field("directionId"),
-                                field("activeDates"),
-                                field(
-                                        "departureStoptime",
-                                        args(arg("serviceDate", date)),
-                                        field("serviceDay"),
-                                        field("scheduledDeparture")
-                                )
-                        )
-                )
-        ));
-        
-        Response response = null; // <2>
-        try {
-            response = client.executeSync(document);
-            routes = response.getList(Route.class, "routes");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to get trip data", e);
-        } finally {
+
+        List<Document> documents = new ArrayList<>();
+
+        for (String id : fixedRouteIds) {
+            List<String> singletonId = Collections.singletonList(id);
+
+            Document document = document(operation(
+                    field(
+                            "routes",
+                            args(arg("ids", singletonId)),
+                            field("id"),
+                            field("gtfsId"),
+                            field(
+                                    "trips",
+                                    field("gtfsId"),
+                                    field("directionId"),
+                                    field("activeDates"),
+                                    field(
+                                            "departureStoptime",
+                                            args(arg("serviceDate", date)),
+                                            field("serviceDay"),
+                                            field("scheduledDeparture")
+                                    )
+                            )
+                    )
+            ));
+
+            documents.add(document);
+        }
+
+        for (Document document : documents) {
+            Response response = null; // <2>
             try {
-                client.close();
-                vertx.close();
+                response = client.executeSync(document);
             } catch (Exception e) {
-                throw new RuntimeException("Failed to close DynamicGraphQLClient", e);
+                throw new RuntimeException("Failed to get trip data", e);
+            }
+
+            if (response != null) {
+                routes.addAll(response.getList(Route.class, "routes"));
             }
         }
-        
+
+        try {
+            client.close();
+            vertx.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to close DynamicGraphQLClient", e);
+        }
+
         return routes;
     }
-    
+
     /**
      * Returns routeIds in format: 'HSL:1234'
      */
@@ -88,25 +102,25 @@ public class TripUtils {
         return routeIds.stream().map(
                 routeId -> routeId.startsWith("HSL:") ? routeId : "HSL:" + routeId).collect(Collectors.toList());
     }
-    
+
     /**
      * Get trip infos of a time period.
      */
     public static List<InternalMessages.TripInfo> getTripInfos(
             List<String> routeIds, LocalDateTime validFrom, LocalDateTime validTo, String digitransitDeveloperApiUri) {
         List<String> dates = TimeUtils.getDatesAsList(validFrom, validTo);
-        
+
         List<InternalMessages.TripInfo> tripInfos = dates.stream().flatMap(
                 dateAsString -> getTripInfos(dateAsString, routeIds, digitransitDeveloperApiUri).stream()
         ).collect(Collectors.toList());
-        
+
         List<InternalMessages.TripInfo> filteredTripInfos = filterTripInfos(tripInfos, validFrom, validTo);
         return removeDuplicates(filteredTripInfos);
     }
-    
+
     static String getTripId(String originalTripId) {
         String modifiedTripId;
-        
+
         if (originalTripId.contains("Ma")) {
             modifiedTripId = originalTripId.replaceFirst("Ma", "MaTiKeToPe");
         } else if (originalTripId.contains("Ti")) {
@@ -124,10 +138,10 @@ public class TripUtils {
         } else {
             modifiedTripId = originalTripId;
         }
-        
+
         return modifiedTripId;
     }
-    
+
     private static List<InternalMessages.TripInfo> removeDuplicates(List<InternalMessages.TripInfo> trips) {
         Set<String> seen = new HashSet<>();
         List<InternalMessages.TripInfo> tripsNoDuplicates = new ArrayList<>();
@@ -139,9 +153,9 @@ public class TripUtils {
                 tripsNoDuplicates.add(trip);
             }
         }
-        
+
         List<InternalMessages.TripInfo> tripsNewIds = new ArrayList<>();
-        
+
         for (InternalMessages.TripInfo trip : tripsNoDuplicates) {
             InternalMessages.TripInfo.Builder builder = InternalMessages.TripInfo.newBuilder();
             builder.setRouteId(trip.getRouteId());
@@ -153,32 +167,33 @@ public class TripUtils {
         }
         return tripsNewIds;
     }
-    
+
     /**
      * Filter out those trips whose first departure time is not inside the time period limited by validFrom and validTo
      * parameters.
      */
     static List<InternalMessages.TripInfo> filterTripInfos(
             List<InternalMessages.TripInfo> inputTripInfos, LocalDateTime validFrom, LocalDateTime validTo) {
-        
+
         // KEY: date (e.g. "20242901"), VALUE: time (e.g. "1542")
         AbstractMap.SimpleEntry<String, String> validFromAsSimpleEntry = TimeUtils.convertInto30hClockStrings(validFrom);
         AbstractMap.SimpleEntry<String, String> validToAsSimpleEntry = TimeUtils.convertInto30hClockStrings(validTo);
-        
+
         List<InternalMessages.TripInfo> outputTripInfos = inputTripInfos.stream().filter(tripInfo ->
                 TimeUtils.isBetween(tripInfo.getOperatingDay(), tripInfo.getStartTime(),
                         validFromAsSimpleEntry, validToAsSimpleEntry)).collect(Collectors.toList());
-        
+
         log.info("There are {} trip infos after filtering (before filtering {} trip infos). validFrom={}, validTo={}, timeZone={}",
                 outputTripInfos.size(), inputTripInfos.size(), validFrom, validTo, TimeZone.getDefault().getDisplayName());
-        
+
         return outputTripInfos;
     }
-    
+
     /**
      * Get trip infos of a single day and routeIds.
-     * @param date date as string, with format 'YYYYMMDD' (e.g. '20240131')
-     * @param routeIds route identifiers
+     *
+     * @param date                       date as string, with format 'YYYYMMDD' (e.g. '20240131')
+     * @param routeIds                   route identifiers
      * @param digitransitDeveloperApiUri
      * @return
      */
@@ -187,24 +202,24 @@ public class TripUtils {
         List<Route> routes = getRoutes(date, routeIds, digitransitDeveloperApiUri);
         log.info("Found {} routes (date={}, routeIds={}, digitransitDeveloperApiUri={})",
                 routes.size(), date, routeIds, digitransitDeveloperApiUri.startsWith("https://dev-api.digitransit.fi"));
-        
+
         if (routes == null) {
             throw new RuntimeException("Failed to get routes (date=" + date + ", routeIds=" + routeIds
                     + ", digitransitDeveloperApiUri="
                     + digitransitDeveloperApiUri.startsWith("https://dev-api.digitransit.fi") + ")");
         }
-        
+
         List<InternalMessages.TripInfo> tripInfos = new ArrayList<>();
-        
+
         for (Route route : routes) {
             if (route == null) {
                 continue;
             }
-            
+
             for (Trip trip : route.getTrips()) {
                 String operatingDay = TimeUtils.getDateAsString(trip.getDepartureStoptime().getServiceDay());
                 String startTime = TimeUtils.getTimeAsString(trip.getDepartureStoptime().getScheduledDeparture());
-                
+
                 InternalMessages.TripInfo.Builder builder = InternalMessages.TripInfo.newBuilder();
                 builder.setRouteId(route.getGtfsId());
                 builder.setTripId(trip.getGtfsId());
@@ -214,7 +229,7 @@ public class TripUtils {
                 tripInfos.add(builder.build());
             }
         }
-        
+
         return tripInfos;
     }
 }
