@@ -58,7 +58,7 @@ public class AlertHandler implements IMessageHandler {
                 List<InternalMessages.Bulletin> massCancellations = BulletinUtils.filterMassCancellationsFromBulletins(serviceAlert.getBulletinsList());
                 
                 if (massCancellations.isEmpty()) {
-                    log.info("No mass cancellation bulletins, total number of bulletins: " + serviceAlert.getBulletinsList());
+                    log.info("No mass cancellation bulletins, total number of bulletins: " + serviceAlert.getBulletinsList().size());
                 } else {
                     List<String> routeIds = massCancellations.stream().flatMap(massCancellation ->
                             massCancellation.getAffectedRoutesList().stream().map(
