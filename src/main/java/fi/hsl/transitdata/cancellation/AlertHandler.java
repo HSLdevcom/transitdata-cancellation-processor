@@ -8,6 +8,7 @@ import fi.hsl.common.transitdata.TransitdataProperties;
 import fi.hsl.common.transitdata.TransitdataSchema;
 import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.cancellation.domain.CancellationData;
+import fi.hsl.transitdata.cancellation.schema.Route;
 import fi.hsl.transitdata.cancellation.util.BulletinUtils;
 
 import fi.hsl.transitdata.cancellation.util.CacheUtils;
@@ -31,6 +32,9 @@ public class AlertHandler implements IMessageHandler {
     // KEY: bulletinId, VALUE: Map<KEY: tripId, VALUE: cancellationData>
     private final Cache<String, Map<String, CancellationData>> bulletinsCache;
     
+    // KEY: date_routeId (e.g. "20240201_HSL:1004"), VALUE: Route object
+    private final Cache<String, Route> graphQLResultsCache;
+    
     private final String digitransitDeveloperApiUri;
 
     public AlertHandler(final PulsarApplicationContext context, String digitransitDeveloperApiUri) {
@@ -42,6 +46,10 @@ public class AlertHandler implements IMessageHandler {
         this.bulletinsCache = Caffeine.newBuilder()
                 .expireAfterAccess(CACHE_DURATION)
                 .build(key -> new HashMap<>());
+        
+        this.graphQLResultsCache = Caffeine.newBuilder()
+                .expireAfterAccess(CACHE_DURATION)
+                .build();
     }
     
     @Override
@@ -66,7 +74,8 @@ public class AlertHandler implements IMessageHandler {
                     log.info("Affected routes: {}", routeIds);
                     for (InternalMessages.Bulletin massCancellation : massCancellations) {
                         List<CancellationData> bulletinCancellations =
-                                BulletinUtils.createTripCancellations(massCancellation, digitransitDeveloperApiUri);
+                                BulletinUtils.createTripCancellations(
+                                        massCancellation, graphQLResultsCache, digitransitDeveloperApiUri);
                         cancellationDataList.addAll(
                                 CacheUtils.handleBulletinCancellations(massCancellation.getBulletinId(),
                                         bulletinCancellations, bulletinsCache));

@@ -24,7 +24,7 @@ public class TimeUtils {
      * method returns the following dates as strings: '20240102', '20240103', '20240104' and '20240105'
      * @param validFrom alert valid from timestamp
      * @param validTo alert valid to timestamp
-     * @return list of dates as string, each date has format 'YYYYMMDD'
+     * @return list of dates as string, each date has format 'yyyyMMDD'
      * @exception throws RuntimeException if parameter validFrom and/or validTo is null, or if validFrom is after validTo
      */
     public static List<String> getDatesAsList(LocalDateTime validFrom, LocalDateTime validTo) {
@@ -56,7 +56,7 @@ public class TimeUtils {
         return dates;
     }
     
-    // Return date as format 'YYYYMMDD', for example '20240102'
+    // Return date in format 'yyyyMMDD', for example '20240102'
     private static String getDateAsString(LocalDateTime someDate) {
         return someDate.format(DATE_FORMATTER);
     }
@@ -67,7 +67,7 @@ public class TimeUtils {
     
     /**
      * Returns date object
-     * @param dateAsString date as format 'YYYYMMDD'
+     * @param dateAsString date as format 'yyyyMMDD'
      * @param timeAsString time as format 'HHMM'
      * @return
      */
@@ -79,7 +79,7 @@ public class TimeUtils {
     /**
      * Get date in String, for example '20240108'.
      * @param serviceDay Departure date of the trip. Format: Unix timestamp (local time) in seconds.
-     * @return Date as string in format 'YYYYMMDD'
+     * @return Date as string in format 'yyyyMMDD'
      */
     public static String getDateAsString(Integer serviceDay) {
         Instant instant = Instant.ofEpochSecond(serviceDay);

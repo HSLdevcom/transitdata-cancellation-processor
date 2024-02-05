@@ -1,10 +1,8 @@
 package fi.hsl.transitdata.cancellation.util;
 
 import fi.hsl.common.transitdata.proto.InternalMessages;
-import fi.hsl.transitdata.cancellation.domain.CancellationData;
 import org.junit.Test;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -39,7 +37,7 @@ public class BulletinUtilsTest {
         trips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240102_La_1_0734", "20240102", "0734", 2));
         
         tripUtils.when(() -> TripUtils.getTripInfos(
-                any(List.class), any(LocalDateTime.class), any(LocalDateTime.class), anyString())).thenReturn(trips);
+                any(List.class), any(LocalDateTime.class), any(LocalDateTime.class), any(), anyString())).thenReturn(trips);
         
         InternalMessages.Bulletin bulletinMassCancellation = createBulletin(
                 InternalMessages.Bulletin.Impact.CANCELLED,

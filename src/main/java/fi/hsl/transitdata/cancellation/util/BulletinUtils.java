@@ -1,7 +1,9 @@
 package fi.hsl.transitdata.cancellation.util;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.cancellation.domain.CancellationData;
+import fi.hsl.transitdata.cancellation.schema.Route;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +28,9 @@ public class BulletinUtils {
     
     // One cancellation contains one trip
     // A route consists of many trips
-    public static List<CancellationData> createTripCancellations(InternalMessages.Bulletin massCancellation, String digitransitDeveloperApiUri) {
+    public static List<CancellationData> createTripCancellations(
+            InternalMessages.Bulletin massCancellation, Cache<String, Route> graphQLResultsCache,
+            String digitransitDeveloperApiUri) {
         List<CancellationData> tripCancellations = new ArrayList<>();
         
         LocalDateTime validFrom = Instant.ofEpochMilli(
@@ -38,7 +42,8 @@ public class BulletinUtils {
         List<String> routeIds = massCancellation.getAffectedRoutesList().stream().
                 map(x -> x.getEntityId()).collect(Collectors.toList());
         
-        for (InternalMessages.TripInfo trip : TripUtils.getTripInfos(routeIds, validFrom, validTo, digitransitDeveloperApiUri)) {
+        for (InternalMessages.TripInfo trip : TripUtils.getTripInfos(
+                routeIds, validFrom, validTo, graphQLResultsCache, digitransitDeveloperApiUri)) {
             InternalMessages.TripCancellation.Builder builder = InternalMessages.TripCancellation.newBuilder();
             long deviationCaseId = InternalMessages.TripCancellation.DeviationCasesType.CANCEL_DEPARTURE.getNumber();
             builder.setRouteId(removeHSLPrefixFromRouteId(trip.getRouteId()));

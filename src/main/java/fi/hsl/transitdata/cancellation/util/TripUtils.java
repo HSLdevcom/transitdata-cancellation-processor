@@ -1,5 +1,6 @@
 package fi.hsl.transitdata.cancellation.util;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.cancellation.schema.Route;
 import fi.hsl.transitdata.cancellation.schema.Trip;
@@ -24,19 +25,47 @@ import static io.smallrye.graphql.client.core.Operation.operation;
 public class TripUtils {
 
     private static final Logger log = LoggerFactory.getLogger(TripUtils.class);
+    
+    public static List<Route> getRoutes(
+            String date, List<String> routeIds,
+            Cache<String, Route> graphQLResultsCache, String digitransitDeveloperApiUri) {
+        List<String> fixedRouteIds = addHSLPrefixToRouteIds(routeIds);
+        List<Route> routes = new ArrayList<>();
+        List<Route> routesFromCache = new ArrayList<>();
+        List<String> routeIdsToCache = new ArrayList<>();
+        
+        for (String id : fixedRouteIds) {
+            Optional<Route> optionalRoute = CacheUtils.getCachedGraphQLResult(date, id, graphQLResultsCache);
+            
+            if (optionalRoute.isPresent()) {
+                routesFromCache.add(optionalRoute.get());
+            } else {
+                routeIdsToCache.add(id);
+            }
+        }
+        
+        List<Route> routesToCache = getRoutesUsingGraphQL(date, routeIdsToCache, digitransitDeveloperApiUri);
+        routesToCache.stream().forEach(routeToCache -> CacheUtils.saveGraphQLResultsToCache(date, routeToCache, graphQLResultsCache));
+        
+        routes.addAll(routesFromCache);
+        routes.addAll(routesToCache);
+        log.info("Num routes {}. Num routes from cache {}. Num routes to cache {}", routes.size(), routesFromCache.size(), routesToCache.size());
+        
+        return routes;
+    }
 
     /**
      * Get routes using a GraphQL query.
      *
-     * @param date                       date as string, with format 'YYYYMMDD' (e.g. '20240131')
+     * @param date                       date as string, with format 'yyyyMMDD' (e.g. '20240131')
      * @param routeIds                   route identifiers
      * @param digitransitDeveloperApiUri
      * @return
      */
-    public static List<Route> getRoutes(String date, List<String> routeIds, String digitransitDeveloperApiUri) {
+    public static List<Route> getRoutesUsingGraphQL(
+            String date, List<String> routeIds, String digitransitDeveloperApiUri) {
         List<Route> routes = new ArrayList<>();
         Vertx vertx = Vertx.vertx();
-        List<String> fixedRouteIds = addHSLPrefixToRouteIds(routeIds);
 
         DynamicGraphQLClient client = new VertxDynamicGraphQLClientBuilder()
                 .url(digitransitDeveloperApiUri)
@@ -45,7 +74,7 @@ public class TripUtils {
 
         List<Document> documents = new ArrayList<>();
 
-        for (String id : fixedRouteIds) {
+        for (String id : routeIds) {
             List<String> singletonId = Collections.singletonList(id);
 
             Document document = document(operation(
@@ -107,11 +136,12 @@ public class TripUtils {
      * Get trip infos of a time period.
      */
     public static List<InternalMessages.TripInfo> getTripInfos(
-            List<String> routeIds, LocalDateTime validFrom, LocalDateTime validTo, String digitransitDeveloperApiUri) {
+            List<String> routeIds, LocalDateTime validFrom, LocalDateTime validTo,
+            Cache<String, Route> graphQLResultsCache, String digitransitDeveloperApiUri) {
         List<String> dates = TimeUtils.getDatesAsList(validFrom, validTo);
 
         List<InternalMessages.TripInfo> tripInfos = dates.stream().flatMap(
-                dateAsString -> getTripInfos(dateAsString, routeIds, digitransitDeveloperApiUri).stream()
+                dateAsString -> getTripInfos(dateAsString, routeIds, graphQLResultsCache, digitransitDeveloperApiUri).stream()
         ).collect(Collectors.toList());
 
         List<InternalMessages.TripInfo> filteredTripInfos = filterTripInfos(tripInfos, validFrom, validTo);
@@ -192,16 +222,18 @@ public class TripUtils {
     /**
      * Get trip infos of a single day and routeIds.
      *
-     * @param date                       date as string, with format 'YYYYMMDD' (e.g. '20240131')
+     * @param date                       date as string, with format 'yyyyMMDD' (e.g. '20240131')
      * @param routeIds                   route identifiers
      * @param digitransitDeveloperApiUri
      * @return
      */
     public static List<InternalMessages.TripInfo> getTripInfos(
-            String date, List<String> routeIds, String digitransitDeveloperApiUri) {
-        List<Route> routes = getRoutes(date, routeIds, digitransitDeveloperApiUri);
-        log.info("Found {} routes (date={}, routeIds={}, digitransitDeveloperApiUri={})",
-                routes.size(), date, routeIds, digitransitDeveloperApiUri.startsWith("https://dev-api.digitransit.fi"));
+            String date, List<String> routeIds,
+            Cache<String, Route> graphQLResultsCache, String digitransitDeveloperApiUri) {
+        List<Route> routes = getRoutes(date, routeIds, graphQLResultsCache, digitransitDeveloperApiUri);
+        log.info("Found {} routes (date={}, routeIds={}, digitransitDeveloperApiUri={}, estimatedCacheSize={})",
+                routes.size(), date, routeIds, digitransitDeveloperApiUri.startsWith("https://dev-api.digitransit.fi"),
+                graphQLResultsCache.estimatedSize());
 
         if (routes == null) {
             throw new RuntimeException("Failed to get routes (date=" + date + ", routeIds=" + routeIds

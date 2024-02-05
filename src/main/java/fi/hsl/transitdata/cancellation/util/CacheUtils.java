@@ -3,13 +3,12 @@ package fi.hsl.transitdata.cancellation.util;
 import com.github.benmanes.caffeine.cache.Cache;
 import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.cancellation.domain.CancellationData;
+import fi.hsl.transitdata.cancellation.schema.Route;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class CacheUtils {
     
@@ -115,5 +114,38 @@ public class CacheUtils {
         }
         
         return cancellationDataList;
+    }
+    
+    public static Optional<Route> getCachedGraphQLResult(
+            String date, String routeId, Cache<String, Route> graphQLResultsCache) {
+        
+        String cacheKey = getGraphQLCacheKey(date, routeId);
+        Route route = graphQLResultsCache.getIfPresent(cacheKey);
+        
+        if (route == null) {
+            return Optional.empty();
+        }
+        
+        return Optional.of(route);
+    }
+    
+    public static void saveGraphQLResultsToCache(
+            String date, Route route, Cache<String, Route> graphQLResultsCache) {
+        String cacheKey = getGraphQLCacheKey(date, route.getGtfsId());
+        graphQLResultsCache.put(cacheKey, route);
+    }
+    
+    /**
+     * Get GraphQL cache key
+     * @param date date as String in format yyyyMMDD (e.g. '20240201')
+     * @param routeId route identifier (e.g. 'HSL:1004')
+     * @return cache key in format date_routeId (e.g. '20240201_HSL:1004')
+     */
+    static String getGraphQLCacheKey(String date, String routeId) {
+        if (StringUtils.isBlank(date)) {
+            throw new RuntimeException("Blank date not allowed");
+        }
+        
+        return date + "_" + routeId;
     }
 }
