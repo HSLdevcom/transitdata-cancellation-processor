@@ -40,7 +40,7 @@ public class BulletinUtils {
                 massCancellation.getValidToUtcMs()).atZone(ZoneId.of("Europe/Helsinki")).toLocalDateTime();
         
         List<String> routeIds = massCancellation.getAffectedRoutesList().stream().
-                map(x -> x.getEntityId()).collect(Collectors.toList());
+                map(InternalMessages.Bulletin.AffectedEntity::getEntityId).collect(Collectors.toList());
         
         for (InternalMessages.TripInfo trip : TripUtils.getTripInfos(
                 routeIds, validFrom, validTo, graphQLResultsCache, digitransitDeveloperApiUri)) {

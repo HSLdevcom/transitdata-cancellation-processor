@@ -43,7 +43,9 @@ public class TripUtilsTest {
         inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240104_Su_1_1950", "20240104", "1950", 2));
         
         List<InternalMessages.TripInfo> outputTrips = TripUtils.filterTripInfos(inputTrips, validFrom, validTo);
-        Set<String> outputTripIds = outputTrips.stream().map(trip -> trip.getTripId()).collect(Collectors.toSet());
+        Set<String> outputTripIds = outputTrips.stream()
+                .map(InternalMessages.TripInfo::getTripId)
+                .collect(Collectors.toSet());
         
         assertEquals(5, outputTrips.size());
         assertFalse(outputTripIds.contains("HSL:4611_20240102_Pe_2_0855"));
@@ -83,7 +85,9 @@ public class TripUtilsTest {
         inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240104_Su_1_2422", "20240104", "2422", 2));
         
         List<InternalMessages.TripInfo> outputTrips = TripUtils.filterTripInfos(inputTrips, validFrom, validTo);
-        Set<String> outputTripIds = outputTrips.stream().map(trip -> trip.getTripId()).collect(Collectors.toSet());
+        Set<String> outputTripIds = outputTrips.stream()
+                .map(InternalMessages.TripInfo::getTripId)
+                .collect(Collectors.toSet());
         
         assertEquals(6, outputTrips.size());
         assertFalse(outputTripIds.contains("HSL:1079_20240102_To_1_2420"));
