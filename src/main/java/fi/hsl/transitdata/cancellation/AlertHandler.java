@@ -111,10 +111,6 @@ public class AlertHandler implements IMessageHandler {
     // This method is copied from transitdata-omm-cancellation-source
     // TODO: Siirrä messageHandler luokkaan?
     private void sendPulsarMessage(InternalMessages.TripCancellation tripCancellation, long timestamp, String dvjId) throws PulsarClientException {
-        if (tripCancellation.getRouteId().startsWith("1030")) {
-            log.info("SENDING " + tripCancellation.getTripId() + " " + tripCancellation.getRouteId() + " " + tripCancellation.getDirectionId() + " " + tripCancellation.getStartDate() + " " + tripCancellation.getStartTime() + " " + tripCancellation.getStatus());
-        }
-        
         try {
             producer.newMessage().value(tripCancellation.toByteArray())
                     .eventTime(timestamp)
