@@ -9,7 +9,9 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class BulletinUtils {
@@ -58,7 +60,31 @@ public class BulletinUtils {
         }
         
         log.info("Added {} cancellations from mass cancellation bulletin.{}", tripCancellations.size(), getBulletinLog(massCancellation));
+        
+        Set<String> originalRouteIdsSet = new HashSet<>(routeIds);
+        java.util.Set<String> tripRouteIdsSet = tripCancellations.stream().map(x -> x.getPayload().getRouteId()).collect(Collectors.toSet());
+        
+        if (originalRouteIdsSet.size() > tripRouteIdsSet.size()) {
+            Set<String> difference = findDifference(originalRouteIdsSet, tripRouteIdsSet);
+            log.warn("Bulletin id: {}. No trips found for these routes: {}", massCancellation.getBulletinId(), difference);
+        }
+        
         return tripCancellations;
+    }
+    
+    private static Set<String> findDifference(Set<String> setA, Set<String> setB) {
+        // Create a new set to store the difference
+        Set<String> differenceSet = new HashSet<>();
+        
+        // Iterate through each element in setA
+        for (String element : setA) {
+            // If the element is not present in setB, add it to the difference set
+            if (!setB.contains(element)) {
+                differenceSet.add(element);
+            }
+        }
+        
+        return differenceSet;
     }
     
     /**
