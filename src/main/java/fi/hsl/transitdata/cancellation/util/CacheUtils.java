@@ -111,7 +111,7 @@ public class CacheUtils {
         
         // check
         if (bulletinsCache.getIfPresent(bulletinId).keySet().size() != modifiedCancellationDataList.size()) {
-            log.warn("Number of cancellations in bulletin does is not equal to number of cancellations in cache");
+            log.warn("Number of cancellations in bulletin does is not equal to number of cancellations in cache. BulletinId={}", bulletinId);
         }
         
         return cancellationDataList;
