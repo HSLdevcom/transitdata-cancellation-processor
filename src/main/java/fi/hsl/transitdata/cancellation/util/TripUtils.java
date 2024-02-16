@@ -100,7 +100,7 @@ public class TripUtils {
      */
     static List<String> addHSLPrefixToRouteIds(List<String> routeIds) {
         return routeIds.stream().map(
-                routeId -> routeId.startsWith("HSL:") ? routeId : "HSL:" + routeId).collect(Collectors.toList());
+                routeId -> routeId.startsWith("HSL:") ? routeId.trim() : "HSL:" + routeId.trim()).collect(Collectors.toList());
     }
 
     /**
