@@ -118,7 +118,7 @@ public class TripUtils {
         return removeDuplicates(filteredTripInfos);
     }
 
-    static String getTripId(String originalTripId) {
+    static String getTripId(String originalTripId, String operatingDay) {
         String modifiedTripId;
 
         if (originalTripId.contains("Ma")) {
@@ -139,7 +139,7 @@ public class TripUtils {
             modifiedTripId = originalTripId;
         }
 
-        return modifiedTripId;
+        return modifiedTripId + "_" + operatingDay;
     }
 
     private static List<InternalMessages.TripInfo> removeDuplicates(List<InternalMessages.TripInfo> trips) {
@@ -159,7 +159,7 @@ public class TripUtils {
         for (InternalMessages.TripInfo trip : tripsNoDuplicates) {
             InternalMessages.TripInfo.Builder builder = InternalMessages.TripInfo.newBuilder();
             builder.setRouteId(trip.getRouteId());
-            builder.setTripId(getTripId(trip.getTripId()));
+            builder.setTripId(getTripId(trip.getTripId(), trip.getOperatingDay()));
             builder.setOperatingDay(trip.getOperatingDay());
             builder.setStartTime(trip.getStartTime());
             builder.setDirectionId(trip.getDirectionId());

@@ -103,9 +103,49 @@ public class TripUtilsTest {
     }
     
     @Test
+    public void testFilterTripInfosAfterManyDays() {
+        LocalDateTime validFrom = TimeUtilsTest.getTestDate("2024-01-02 08:57:00");
+        LocalDateTime validTo = TimeUtilsTest.getTestDate("2024-01-04 17:30:45");
+        
+        List<InternalMessages.TripInfo> inputTrips = new ArrayList<>();
+        // before
+        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240226_MaTiKeToPe_1_2420_20240101", "20240101", "2420", 1));
+        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240226_MaTiKeToPe_2_0855_20240102", "20240102", "0855", 1));
+        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240226_MaTiKeToPe_1_0734_20240102", "20240102", "0734", 2));
+        // inside
+        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240226_MaTiKeToPe_2_0900_20240102", "20240102", "0900", 1));
+        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240226_MaTiKeToPe_2_1100_20240102", "20240102", "1100", 1));
+        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240226_MaTiKeToPe_2_0900_20240103", "20240103", "0900", 1));
+        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240226_MaTiKeToPe_2_1100_20240103", "20240103", "1100", 1));
+        
+        // after
+        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240226_MaTiKeToPe_2_1731_20240104", "20240104", "1731", 1));
+        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240226_MaTiKeToPe_1_1950_20240104", "20240104", "1950", 2));
+        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240226_MaTiKeToPe_1_2422_20240104", "20240104", "2422", 2));
+        
+        List<InternalMessages.TripInfo> outputTrips = TripUtils.filterTripInfos(inputTrips, validFrom, validTo);
+        Set<String> outputTripIds = outputTrips.stream().map(trip -> trip.getTripId()).collect(Collectors.toSet());
+        
+        assertEquals(4, outputTrips.size());
+        assertEquals(4, outputTripIds.size());
+        assertFalse(outputTripIds.contains("HSL:1079_20240226_MaTiKeToPe_1_2420_20240101"));
+        assertFalse(outputTripIds.contains("HSL:4611_20240226_MaTiKeToPe_2_0855_20240102"));
+        assertFalse(outputTripIds.contains("HSL:1079_20240226_MaTiKeToPe_1_0734_20240102"));
+        
+        assertTrue(outputTripIds.contains("HSL:4611_20240226_MaTiKeToPe_2_0900_20240102"));
+        assertTrue(outputTripIds.contains("HSL:1079_20240226_MaTiKeToPe_2_1100_20240102"));
+        assertTrue(outputTripIds.contains("HSL:4611_20240226_MaTiKeToPe_2_0900_20240103"));
+        assertTrue(outputTripIds.contains("HSL:1079_20240226_MaTiKeToPe_2_1100_20240103"));
+        
+        assertFalse(outputTripIds.contains("HSL:4611_20240226_MaTiKeToPe_2_1731_20240104"));
+        assertFalse(outputTripIds.contains("HSL:1079_20240226_MaTiKeToPe_1_1950_20240104"));
+        assertFalse(outputTripIds.contains("HSL:1079_20240226_MaTiKeToPe_1_2422_20240104"));
+    }
+    
+    @Test
     public void testGetTripId() {
-        assertEquals("HSL:1071_20240126_MaTiKeToPe_2_1305", TripUtils.getTripId("HSL:1071_20240126_Ke_2_1305"));
-        assertEquals("HSL:1071_20240126_LaSu_2_2307", TripUtils.getTripId("HSL:1071_20240126_La_2_2307"));
+        assertEquals("HSL:1071_20240126_MaTiKeToPe_2_1305_20240215", TripUtils.getTripId("HSL:1071_20240126_Ke_2_1305", "20240215"));
+        assertEquals("HSL:1071_20240126_LaSu_2_2307_20240215", TripUtils.getTripId("HSL:1071_20240126_La_2_2307", "20240215"));
     }
     
     public static InternalMessages.TripInfo createTripInfo(
