@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.cancellation.domain.CancellationData;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -28,11 +29,17 @@ public class CacheUtilsTest {
         List<CancellationData> cancellationDataList = new ArrayList<>();
 
         for (InternalMessages.TripCancellation tripCancellation : buildTripCancellations()) {
-            cancellationDataList.add(new CancellationData(tripCancellation, 1706616017, "none", 123));
+            cancellationDataList.add(getSampleCancellation(tripCancellation));
         }
 
         return cancellationDataList;
     }
+    
+    @NotNull
+    private static CancellationData getSampleCancellation(InternalMessages.TripCancellation tripCancellation) {
+        return new CancellationData(tripCancellation, 1706616017, "none", 123);
+    }
+    
     @Test
     public void singleCancellationDataIsSavedToCache() {
         Cache<String, Map<String, CancellationData>> bulletinsCache =  Caffeine.newBuilder().expireAfterAccess(Duration.ofHours(4)).build(key -> new HashMap<>());
@@ -42,7 +49,7 @@ public class CacheUtilsTest {
     }
 
     @Test
-    public void modifiedCancellationIsCorrectlySaved() {
+    public void modifiedCancellationWithCancelledCancellationIsCorrectlySaved() {
 
         Cache<String, Map<String, CancellationData>> bulletinsCache =  Caffeine.newBuilder().expireAfterAccess(Duration.ofHours(4)).build(key -> new HashMap<>());
         CacheUtils.handleBulletinCancellations("bulletin1", buildCancellationDataList() , bulletinsCache);
@@ -54,5 +61,24 @@ public class CacheUtilsTest {
 
         assertFalse(Objects.requireNonNull(bulletinsCache.getIfPresent("bulletin1")).containsKey("trip2"));
         assertTrue(Objects.requireNonNull(bulletinsCache.getIfPresent("bulletin1")).containsKey("trip1"));
+    }
+    
+    @Test
+    public void modifiedCancellationWithAddedCancellationIsCorrectlySaved() {
+        InternalMessages.TripCancellation tripCancellation3 = InternalMessages.TripCancellation.newBuilder().setTripId("trip3").setSchemaVersion(1).setStatus(InternalMessages.TripCancellation.Status.CANCELED).build();
+        
+        Cache<String, Map<String, CancellationData>> bulletinsCache =  Caffeine.newBuilder().expireAfterAccess(Duration.ofHours(4)).build(key -> new HashMap<>());
+        CacheUtils.handleBulletinCancellations("bulletin1", buildCancellationDataList() , bulletinsCache);
+        
+        ArrayList<CancellationData> cancelledBulletin = new ArrayList<>();
+        cancelledBulletin.add(buildCancellationDataList().get(0)); // trip1
+        cancelledBulletin.add(buildCancellationDataList().get(1)); // trip2
+        cancelledBulletin.add(getSampleCancellation(tripCancellation3)); // added
+        
+        CacheUtils.handleBulletinCancellations("bulletin1", cancelledBulletin, bulletinsCache);
+        
+        assertTrue(Objects.requireNonNull(bulletinsCache.getIfPresent("bulletin1")).containsKey("trip1"));
+        assertTrue(Objects.requireNonNull(bulletinsCache.getIfPresent("bulletin1")).containsKey("trip2"));
+        assertTrue(Objects.requireNonNull(bulletinsCache.getIfPresent("bulletin1")).containsKey("trip3"));
     }
 }

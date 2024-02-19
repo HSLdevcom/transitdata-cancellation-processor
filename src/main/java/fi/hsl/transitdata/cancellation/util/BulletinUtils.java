@@ -108,7 +108,7 @@ public class BulletinUtils {
         return hours + ":" + minutes + ":00";
     }
     
-    public static String getBulletinLog(InternalMessages.Bulletin massCancellation) {
+    private static String getBulletinLog(InternalMessages.Bulletin massCancellation) {
         StringBuilder bulletinLog = new StringBuilder(" BULLETIN");
         
         LocalDateTime validFrom = Instant.ofEpochMilli(
