@@ -38,7 +38,7 @@ public class CacheUtilsTest {
         Cache<String, Map<String, CancellationData>> bulletinsCache =  Caffeine.newBuilder().expireAfterAccess(Duration.ofHours(4)).build(key -> new HashMap<>());
         CacheUtils.handleBulletinCancellations("bulletin1", buildCancellationDataList() , bulletinsCache);
 
-        assertTrue(bulletinsCache.getIfPresent("bulletin1").containsKey("trip1"));
+        assertTrue(Objects.requireNonNull(bulletinsCache.getIfPresent("bulletin1")).containsKey("trip1"));
     }
 
     @Test
@@ -52,7 +52,7 @@ public class CacheUtilsTest {
 
         CacheUtils.handleBulletinCancellations("bulletin1", cancelledBulletin, bulletinsCache);
 
-        assertFalse(bulletinsCache.getIfPresent("bulletin1").containsKey("trip2"));
-        assertTrue(bulletinsCache.getIfPresent("bulletin1").containsKey("trip1"));
+        assertFalse(Objects.requireNonNull(bulletinsCache.getIfPresent("bulletin1")).containsKey("trip2"));
+        assertTrue(Objects.requireNonNull(bulletinsCache.getIfPresent("bulletin1")).containsKey("trip1"));
     }
 }

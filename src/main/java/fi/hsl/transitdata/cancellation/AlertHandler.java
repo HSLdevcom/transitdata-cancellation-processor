@@ -12,6 +12,7 @@ import fi.hsl.transitdata.cancellation.util.BulletinUtils;
 
 import fi.hsl.transitdata.cancellation.util.CacheUtils;
 import org.apache.pulsar.client.api.*;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +46,7 @@ public class AlertHandler implements IMessageHandler {
     }
     
     @Override
-    public void handleMessage(final Message message) {
+    public void handleMessage(@NotNull final Message message) {
         try {
             List<CancellationData> cancellationDataList = new ArrayList<>();
             

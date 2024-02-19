@@ -38,7 +38,7 @@ public class BulletinUtils {
                 massCancellation.getValidToUtcMs()).atZone(ZoneId.of("Europe/Helsinki")).toLocalDateTime();
         
         List<String> routeIds = massCancellation.getAffectedRoutesList().stream().
-                map(x -> x.getEntityId()).collect(Collectors.toList());
+                map(InternalMessages.Bulletin.AffectedEntity::getEntityId).collect(Collectors.toList());
         
         for (InternalMessages.TripInfo trip : TripUtils.getTripInfos(routeIds, validFrom, validTo, digitransitDeveloperApiUri)) {
             InternalMessages.TripCancellation.Builder builder = InternalMessages.TripCancellation.newBuilder();
@@ -117,10 +117,12 @@ public class BulletinUtils {
         LocalDateTime validTo = Instant.ofEpochMilli(
                 massCancellation.getValidToUtcMs()).atZone(ZoneId.of("Europe/Helsinki")).toLocalDateTime();
         
-        bulletinLog.append(" Id: " + massCancellation.getBulletinId());
-        bulletinLog.append(", Valid from: " + validFrom);
-        bulletinLog.append(", Valid to: " + validTo);
-        bulletinLog.append(", Affected routes: " + massCancellation.getAffectedRoutesList());
+        bulletinLog.append(" Id: ").
+                append(massCancellation.getBulletinId()).
+                append(", Valid from: ").append(validFrom).
+                append(", Valid to: ").append(validTo).
+                append(", Affected routes: ").
+                append(massCancellation.getAffectedRoutesList());
         
         return bulletinLog.toString();
     }

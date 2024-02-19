@@ -6,10 +6,7 @@ import fi.hsl.transitdata.cancellation.domain.CancellationData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class CacheUtils {
     
@@ -110,7 +107,7 @@ public class CacheUtils {
         }
         
         // check
-        if (bulletinsCache.getIfPresent(bulletinId).keySet().size() != modifiedCancellationDataList.size()) {
+        if (Objects.requireNonNull(bulletinsCache.getIfPresent(bulletinId)).keySet().size() != modifiedCancellationDataList.size()) {
             log.warn("Number of cancellations in bulletin does is not equal to number of cancellations in cache. BulletinId={}", bulletinId);
         }
         

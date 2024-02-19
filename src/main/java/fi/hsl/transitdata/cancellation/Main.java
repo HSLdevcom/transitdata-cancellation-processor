@@ -32,7 +32,7 @@ public class Main {
     }
     
     private static String getDigitransitDeveloperApiUri() throws Exception {
-        String digitransitDeveloperApiUri = "";
+        String digitransitDeveloperApiUri;
         
         if (ConfigUtils.getEnv("FILEPATH_DIGITRANSIT_DEVAPI_SECRET").isEmpty()) {
             throw new Exception("Environment variable FILEPATH_DIGITRANSIT_DEVAPI_SECRET is missing");

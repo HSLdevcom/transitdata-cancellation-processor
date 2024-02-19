@@ -30,8 +30,8 @@ public class TripUtils {
      *
      * @param date                       date as string, with format 'YYYYMMDD' (e.g. '20240131')
      * @param routeIds                   route identifiers
-     * @param digitransitDeveloperApiUri
-     * @return
+     * @param digitransitDeveloperApiUri Digitransit API URL
+     * @return routes
      */
     public static List<Route> getRoutes(String date, List<String> routeIds, String digitransitDeveloperApiUri) {
         List<Route> routes = new ArrayList<>();
@@ -73,7 +73,7 @@ public class TripUtils {
         }
 
         for (Document document : documents) {
-            Response response = null; // <2>
+            Response response;
             try {
                 response = client.executeSync(document);
             } catch (Exception e) {
@@ -194,21 +194,15 @@ public class TripUtils {
      *
      * @param date                       date as string, with format 'YYYYMMDD' (e.g. '20240131')
      * @param routeIds                   route identifiers
-     * @param digitransitDeveloperApiUri
-     * @return
+     * @param digitransitDeveloperApiUri Digitransit API URL
+     * @return trip infos
      */
     public static List<InternalMessages.TripInfo> getTripInfos(
             String date, List<String> routeIds, String digitransitDeveloperApiUri) {
         List<Route> routes = getRoutes(date, routeIds, digitransitDeveloperApiUri);
         log.info("Found {} routes (date={}, routeIds={}, digitransitDeveloperApiUri={})",
                 routes.size(), date, routeIds, digitransitDeveloperApiUri.startsWith("https://dev-api.digitransit.fi"));
-
-        if (routes == null) {
-            throw new RuntimeException("Failed to get routes (date=" + date + ", routeIds=" + routeIds
-                    + ", digitransitDeveloperApiUri="
-                    + digitransitDeveloperApiUri.startsWith("https://dev-api.digitransit.fi") + ")");
-        }
-
+        
         List<InternalMessages.TripInfo> tripInfos = new ArrayList<>();
 
         for (Route route : routes) {
@@ -225,7 +219,7 @@ public class TripUtils {
                 builder.setTripId(trip.getGtfsId());
                 builder.setOperatingDay(operatingDay);
                 builder.setStartTime(startTime);
-                builder.setDirectionId(Integer.valueOf(trip.getDirectionId()));
+                builder.setDirectionId(Integer.parseInt(trip.getDirectionId()));
                 tripInfos.add(builder.build());
             }
         }
