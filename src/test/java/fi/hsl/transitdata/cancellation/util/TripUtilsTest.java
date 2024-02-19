@@ -1,6 +1,7 @@
 package fi.hsl.transitdata.cancellation.util;
 
 import fi.hsl.common.transitdata.proto.InternalMessages;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import java.time.LocalDateTime;
@@ -25,134 +26,75 @@ public class TripUtilsTest {
     
     @Test
     public void testFilterTripInfos() {
-        LocalDateTime validFrom = TimeUtilsTest.getTestDate("2024-01-02 08:57:00");
-        LocalDateTime validTo = TimeUtilsTest.getTestDate("2024-01-04 17:30:45");
+        LocalDateTime validFrom = TimeUtilsTest.getTestDate("2024-02-21 08:00:00");
+        LocalDateTime validTo = TimeUtilsTest.getTestDate("2024-02-23 08:00:00");
         
-        List<InternalMessages.TripInfo> inputTrips = new ArrayList<>();
-        // before
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240102_Pe_2_0855", "20240102", "0855", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240102_Pe_1_0734", "20240102", "0734", 2));
-        // inside
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240102_Pe_2_0900", "20240102", "0900", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240103_La_2_1000", "20240103", "1000", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:4611_20240103_La_2_1100", "20240103", "1100", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240103_La_1_1200", "20240103", "1200", 2));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240104_Su_2_1300", "20240104", "1300", 1));
-        // after
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240104_Su_2_1731", "20240104", "1731", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240104_Su_1_1950", "20240104", "1950", 2));
-        
+        List<InternalMessages.TripInfo> inputTrips = getSampleTripInfos();
         List<InternalMessages.TripInfo> outputTrips = TripUtils.filterTripInfos(inputTrips, validFrom, validTo);
         Set<String> outputTripIds = outputTrips.stream().map(InternalMessages.TripInfo::getTripId).collect(Collectors.toSet());
         
-        assertEquals(5, outputTrips.size());
-        assertFalse(outputTripIds.contains("HSL:4611_20240102_Pe_2_0855"));
-        assertFalse(outputTripIds.contains("HSL:1079_20240102_Pe_1_0734"));
+        assertEquals(8, outputTrips.size());
+        assertEquals(8, outputTripIds.size());
         
-        assertTrue(outputTripIds.contains("HSL:4611_20240102_Pe_2_0900"));
-        assertTrue(outputTripIds.contains("HSL:4611_20240103_La_2_1000"));
-        assertTrue(outputTripIds.contains("HSL:4611_20240103_La_2_1100"));
-        assertTrue(outputTripIds.contains("HSL:1079_20240103_La_1_1200"));
-        assertTrue(outputTripIds.contains("HSL:4611_20240104_Su_2_1300"));
+        assertFalse(outputTripIds.contains("HSL:4611_MaTiKeToPe_1_0735_20240220"));
+        assertFalse(outputTripIds.contains("HSL:1079_MaTiKeToPe_1_1200_20240220"));
+        assertFalse(outputTripIds.contains("HSL:4611_MaTiKeToPe_1_1800_20240220"));
+        assertFalse(outputTripIds.contains("HSL:1079_MaTiKeToPe_1_2420_20240220"));
         
-        assertFalse(outputTripIds.contains("HSL:4611_20240104_Su_2_1731"));
-        assertFalse(outputTripIds.contains("HSL:1079_20240104_Su_1_1950"));
+        assertFalse(outputTripIds.contains("HSL:4611_MaTiKeToPe_1_0735_20240221"));
+        assertTrue(outputTripIds.contains("HSL:1079_MaTiKeToPe_1_1200_20240221"));
+        assertTrue(outputTripIds.contains("HSL:4611_MaTiKeToPe_1_1800_20240221"));
+        assertTrue(outputTripIds.contains("HSL:1079_MaTiKeToPe_1_2420_20240221"));
+        
+        assertTrue(outputTripIds.contains("HSL:4611_MaTiKeToPe_1_0735_20240222"));
+        assertTrue(outputTripIds.contains("HSL:1079_MaTiKeToPe_1_1200_20240222"));
+        assertTrue(outputTripIds.contains("HSL:4611_MaTiKeToPe_1_1800_20240222"));
+        assertTrue(outputTripIds.contains("HSL:1079_MaTiKeToPe_1_2420_20240222"));
+        
+        assertTrue(outputTripIds.contains("HSL:4611_MaTiKeToPe_1_0735_20240223"));
+        assertFalse(outputTripIds.contains("HSL:1079_MaTiKeToPe_1_1200_20240223"));
+        assertFalse(outputTripIds.contains("HSL:4611_MaTiKeToPe_1_1800_20240223"));
+        assertFalse(outputTripIds.contains("HSL:1079_MaTiKeToPe_1_2420_20240223"));
     }
     
-    @Test
-    public void testFilterTripInfosAfterMidnight() {
-        LocalDateTime validFrom = TimeUtilsTest.getTestDate("2024-01-02 08:57:00");
-        LocalDateTime validTo = TimeUtilsTest.getTestDate("2024-01-04 17:30:45");
+    @NotNull
+    private static List<InternalMessages.TripInfo> getSampleTripInfos() {
+        List<InternalMessages.TripInfo> trips = new ArrayList<>();
         
-        List<InternalMessages.TripInfo> inputTrips = new ArrayList<>();
-        // before
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240102_To_1_2420", "20240101", "2420", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240102_Pe_2_0855", "20240102", "0855", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240102_Pe_1_0734", "20240102", "0734", 2));
-        // inside
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240102_Pe_2_0900", "20240102", "0900", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240103_La_2_1000", "20240103", "1000", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:4611_20240103_La_2_1100", "20240103", "1100", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240103_La_1_1200", "20240103", "1200", 2));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240103_La_2_2421", "20240103", "2421", 2));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240104_Su_2_1300", "20240104", "1300", 1));
+        trips.add(createTripInfo("HSL:4611", "HSL:4611_Ti_1_0735", "20240220", "0735", 1));
+        trips.add(createTripInfo("HSL:1079", "HSL:1079_Ti_1_1200", "20240220", "1200", 1));
+        trips.add(createTripInfo("HSL:4611", "HSL:4611_Ti_1_1800", "20240220", "1800", 1));
+        trips.add(createTripInfo("HSL:1079", "HSL:1079_Ti_1_2420", "20240220", "2420", 1));
         
-        // after
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240104_Su_2_1731", "20240104", "1731", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240104_Su_1_1950", "20240104", "1950", 2));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240104_Su_1_2422", "20240104", "2422", 2));
+        trips.add(createTripInfo("HSL:4611", "HSL:4611_Ti_1_0735", "20240221", "0735", 1));
+        trips.add(createTripInfo("HSL:1079", "HSL:1079_Ti_1_1200", "20240221", "1200", 1));
+        trips.add(createTripInfo("HSL:4611", "HSL:4611_Ti_1_1800", "20240221", "1800", 1));
+        trips.add(createTripInfo("HSL:1079", "HSL:1079_Ti_1_2420", "20240221", "2420", 1));
         
-        List<InternalMessages.TripInfo> outputTrips = TripUtils.filterTripInfos(inputTrips, validFrom, validTo);
-        Set<String> outputTripIds = outputTrips.stream().map(InternalMessages.TripInfo::getTripId).collect(Collectors.toSet());
+        trips.add(createTripInfo("HSL:4611", "HSL:4611_Ti_1_0735", "20240222", "0735", 1));
+        trips.add(createTripInfo("HSL:1079", "HSL:1079_Ti_1_1200", "20240222", "1200", 1));
+        trips.add(createTripInfo("HSL:4611", "HSL:4611_Ti_1_1800", "20240222", "1800", 1));
+        trips.add(createTripInfo("HSL:1079", "HSL:1079_Ti_1_2420", "20240222", "2420", 1));
         
-        assertEquals(6, outputTrips.size());
-        assertFalse(outputTripIds.contains("HSL:1079_20240102_To_1_2420"));
-        assertFalse(outputTripIds.contains("HSL:4611_20240102_Pe_2_0855"));
-        assertFalse(outputTripIds.contains("HSL:1079_20240102_Pe_1_0734"));
+        trips.add(createTripInfo("HSL:4611", "HSL:4611_Ti_1_0735", "20240223", "0735", 1));
+        trips.add(createTripInfo("HSL:1079", "HSL:1079_Ti_1_1200", "20240223", "1200", 1));
+        trips.add(createTripInfo("HSL:4611", "HSL:4611_Ti_1_1800", "20240223", "1800", 1));
+        trips.add(createTripInfo("HSL:1079", "HSL:1079_Ti_1_2420", "20240223", "2420", 1));
         
-        assertTrue(outputTripIds.contains("HSL:4611_20240102_Pe_2_0900"));
-        assertTrue(outputTripIds.contains("HSL:4611_20240103_La_2_1000"));
-        assertTrue(outputTripIds.contains("HSL:4611_20240103_La_2_1100"));
-        assertTrue(outputTripIds.contains("HSL:1079_20240103_La_1_1200"));
-        assertTrue(outputTripIds.contains("HSL:1079_20240103_La_2_2421"));
-        assertTrue(outputTripIds.contains("HSL:4611_20240104_Su_2_1300"));
-        
-        assertFalse(outputTripIds.contains("HSL:4611_20240104_Su_2_1731"));
-        assertFalse(outputTripIds.contains("HSL:1079_20240104_Su_1_1950"));
-        assertFalse(outputTripIds.contains("HSL:1079_20240104_Su_1_2422"));
-    }
-    
-    @Test
-    public void testFilterTripInfosAfterManyDays() {
-        LocalDateTime validFrom = TimeUtilsTest.getTestDate("2024-01-02 08:57:00");
-        LocalDateTime validTo = TimeUtilsTest.getTestDate("2024-01-04 17:30:45");
-        
-        List<InternalMessages.TripInfo> inputTrips = new ArrayList<>();
-        // before
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240226_MaTiKeToPe_1_2420_20240101", "20240101", "2420", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240226_MaTiKeToPe_2_0855_20240102", "20240102", "0855", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240226_MaTiKeToPe_1_0734_20240102", "20240102", "0734", 2));
-        // inside
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240226_MaTiKeToPe_2_0900_20240102", "20240102", "0900", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240226_MaTiKeToPe_2_1100_20240102", "20240102", "1100", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240226_MaTiKeToPe_2_0900_20240103", "20240103", "0900", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240226_MaTiKeToPe_2_1100_20240103", "20240103", "1100", 1));
-        
-        // after
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240226_MaTiKeToPe_2_1731_20240104", "20240104", "1731", 1));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240226_MaTiKeToPe_1_1950_20240104", "20240104", "1950", 2));
-        inputTrips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240226_MaTiKeToPe_1_2422_20240104", "20240104", "2422", 2));
-        
-        List<InternalMessages.TripInfo> outputTrips = TripUtils.filterTripInfos(inputTrips, validFrom, validTo);
-        Set<String> outputTripIds = outputTrips.stream().map(InternalMessages.TripInfo::getTripId).collect(Collectors.toSet());
-        
-        assertEquals(4, outputTrips.size());
-        assertEquals(4, outputTripIds.size());
-        assertFalse(outputTripIds.contains("HSL:1079_20240226_MaTiKeToPe_1_2420_20240101"));
-        assertFalse(outputTripIds.contains("HSL:4611_20240226_MaTiKeToPe_2_0855_20240102"));
-        assertFalse(outputTripIds.contains("HSL:1079_20240226_MaTiKeToPe_1_0734_20240102"));
-        
-        assertTrue(outputTripIds.contains("HSL:4611_20240226_MaTiKeToPe_2_0900_20240102"));
-        assertTrue(outputTripIds.contains("HSL:1079_20240226_MaTiKeToPe_2_1100_20240102"));
-        assertTrue(outputTripIds.contains("HSL:4611_20240226_MaTiKeToPe_2_0900_20240103"));
-        assertTrue(outputTripIds.contains("HSL:1079_20240226_MaTiKeToPe_2_1100_20240103"));
-        
-        assertFalse(outputTripIds.contains("HSL:4611_20240226_MaTiKeToPe_2_1731_20240104"));
-        assertFalse(outputTripIds.contains("HSL:1079_20240226_MaTiKeToPe_1_1950_20240104"));
-        assertFalse(outputTripIds.contains("HSL:1079_20240226_MaTiKeToPe_1_2422_20240104"));
+        return trips;
     }
     
     @Test
     public void testGetTripId() {
-        assertEquals("HSL:1071_20240126_MaTiKeToPe_2_1305_20240215", TripUtils.getTripId("HSL:1071_20240126_Ke_2_1305", "20240215"));
-        assertEquals("HSL:1071_20240126_LaSu_2_2307_20240215", TripUtils.getTripId("HSL:1071_20240126_La_2_2307", "20240215"));
+        assertEquals("HSL:1071_MaTiKeToPe_2_1305_20240215", TripUtils.getTripId("HSL:1071_Ma_2_1305", "20240215"));
+        assertEquals("HSL:1071_LaSu_2_2307_20240215", TripUtils.getTripId("HSL:1071_La_2_2307", "20240215"));
     }
     
     public static InternalMessages.TripInfo createTripInfo(
-            String routeId, String tripId, String operationDay, String startTime, int directionId) {
+            String routeId, String gtfsId, String operationDay, String startTime, int directionId) {
         InternalMessages.TripInfo.Builder builder = InternalMessages.TripInfo.newBuilder();
         builder.setRouteId(routeId);
-        builder.setTripId(tripId);
+        builder.setTripId(TripUtils.getTripId(gtfsId, operationDay));
         builder.setOperatingDay(operationDay);
         builder.setStartTime(startTime);
         builder.setDirectionId(directionId);

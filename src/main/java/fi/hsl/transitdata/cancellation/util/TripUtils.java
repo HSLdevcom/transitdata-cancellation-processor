@@ -142,7 +142,7 @@ public class TripUtils {
         return modifiedTripId + "_" + operatingDay;
     }
 
-    private static List<InternalMessages.TripInfo> removeDuplicates(List<InternalMessages.TripInfo> trips) {
+    static List<InternalMessages.TripInfo> removeDuplicates(List<InternalMessages.TripInfo> trips) {
         Set<String> seen = new HashSet<>();
         List<InternalMessages.TripInfo> tripsNoDuplicates = new ArrayList<>();
         for (InternalMessages.TripInfo trip : trips) {
