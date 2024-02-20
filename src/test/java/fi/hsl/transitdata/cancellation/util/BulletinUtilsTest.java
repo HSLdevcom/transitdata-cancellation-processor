@@ -31,9 +31,9 @@ public class BulletinUtilsTest {
     
     private static List<InternalMessages.Bulletin> initializeTestTrips(MockedStatic<TripUtils> tripUtils) {
         List<InternalMessages.TripInfo> trips = new ArrayList<>();
-        trips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240102_Ti_2_1415", "20240102", "1415", 1));
-        trips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240102_Ti_2_1515", "20240102", "1515", 1));
-        trips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240102_La_1_0734", "20240102", "0734", 2));
+        trips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240102_Ti_2_1415", "20240102", "1415", 1, true));
+        trips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240102_Ti_2_1515", "20240102", "1515", 1, true));
+        trips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240102_La_1_0734", "20240102", "0734", 2, true));
         
         tripUtils.when(() -> TripUtils.getTripInfos(
                 anyList(), any(LocalDateTime.class), any(LocalDateTime.class), anyString())).thenReturn(trips);

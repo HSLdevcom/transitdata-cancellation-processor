@@ -141,7 +141,28 @@ public class TripUtils {
 
         return modifiedTripId + "_" + operatingDay;
     }
-
+    
+    /**
+     * Remove duplicate trip info objects. Duplicate objects have the same route, operating day, start time and
+     * direction.
+     *
+     * For example, a GraphQL search may return trips having the same route (HSL:1030), operating day (20240220),
+     * start time (1408) and direction (1). GTFS identifiers might be like this:
+     * HSL:1030_20240212_Ma_2_1408
+     * HSL:1030_20240219_Ti_2_1408
+     * HSL:1030_20240226_Ke_2_1408
+     * HSL:1030_20240212_To_2_1408
+     * HSL:1030_20240226_Pe_2_1408
+     *
+     * These trips are replaced by one trip that has trip identifier:
+     * HSL:1030_20240212_MaTiKeToPe_2_1408_20240220
+     *
+     * That is,
+     * 1) Weekday (Ma, Ti, Ke, To, Pe) or (La, Su) is replaced by "MaTiKeToPe" or "LaSu".
+     * 2) Operating day, in this case "_20240220", is added to the ending
+     * @param trips list of trip info objects that may contain duplicates
+     * @return list of trip info objects with duplicates removed
+     */
     static List<InternalMessages.TripInfo> removeDuplicates(List<InternalMessages.TripInfo> trips) {
         Set<String> seen = new HashSet<>();
         List<InternalMessages.TripInfo> tripsNoDuplicates = new ArrayList<>();
