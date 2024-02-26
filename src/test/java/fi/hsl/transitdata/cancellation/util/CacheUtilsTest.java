@@ -41,15 +41,15 @@ public class CacheUtilsTest {
     }
     
     @Test
-    public void singleCancellationDataIsSavedToCache() {
+    public void testSingleCancellationDataIsSavedToCache() {
         Cache<String, Map<String, CancellationData>> bulletinsCache =  Caffeine.newBuilder().expireAfterAccess(Duration.ofHours(4)).build(key -> new HashMap<>());
         CacheUtils.handleBulletinCancellations("bulletin1", buildCancellationDataList() , bulletinsCache);
 
-        assertTrue(Objects.requireNonNull(bulletinsCache.getIfPresent("bulletin1")).containsKey("trip1"));
+        assertTrue(bulletinsCache.getIfPresent("bulletin1").containsKey("trip1"));
     }
 
     @Test
-    public void modifiedCancellationWithCancelledCancellationIsCorrectlySaved() {
+    public void testModifiedCancellationWithCancelledCancellationIsCorrectlySaved() {
 
         Cache<String, Map<String, CancellationData>> bulletinsCache =  Caffeine.newBuilder().expireAfterAccess(Duration.ofHours(4)).build(key -> new HashMap<>());
         CacheUtils.handleBulletinCancellations("bulletin1", buildCancellationDataList() , bulletinsCache);
@@ -59,12 +59,12 @@ public class CacheUtilsTest {
 
         CacheUtils.handleBulletinCancellations("bulletin1", cancelledBulletin, bulletinsCache);
 
-        assertFalse(Objects.requireNonNull(bulletinsCache.getIfPresent("bulletin1")).containsKey("trip2"));
-        assertTrue(Objects.requireNonNull(bulletinsCache.getIfPresent("bulletin1")).containsKey("trip1"));
+        assertFalse(bulletinsCache.getIfPresent("bulletin1").containsKey("trip2"));
+        assertTrue(bulletinsCache.getIfPresent("bulletin1").containsKey("trip1"));
     }
     
     @Test
-    public void modifiedCancellationWithAddedCancellationIsCorrectlySaved() {
+    public void testModifiedCancellationWithAddedCancellationIsCorrectlySaved() {
         InternalMessages.TripCancellation tripCancellation3 = InternalMessages.TripCancellation.newBuilder().setTripId("trip3").setSchemaVersion(1).setStatus(InternalMessages.TripCancellation.Status.CANCELED).build();
         
         Cache<String, Map<String, CancellationData>> bulletinsCache =  Caffeine.newBuilder().expireAfterAccess(Duration.ofHours(4)).build(key -> new HashMap<>());
@@ -77,8 +77,26 @@ public class CacheUtilsTest {
         
         CacheUtils.handleBulletinCancellations("bulletin1", cancelledBulletin, bulletinsCache);
         
-        assertTrue(Objects.requireNonNull(bulletinsCache.getIfPresent("bulletin1")).containsKey("trip1"));
-        assertTrue(Objects.requireNonNull(bulletinsCache.getIfPresent("bulletin1")).containsKey("trip2"));
-        assertTrue(Objects.requireNonNull(bulletinsCache.getIfPresent("bulletin1")).containsKey("trip3"));
+        assertTrue(bulletinsCache.getIfPresent("bulletin1").containsKey("trip1"));
+        assertTrue(bulletinsCache.getIfPresent("bulletin1").containsKey("trip2"));
+        assertTrue(bulletinsCache.getIfPresent("bulletin1").containsKey("trip3"));
+    }
+    
+    @Test
+    public void testGetTripCancellationMapFromCache() {
+        Cache<String, Map<String, CancellationData>> bulletinsCache =  Caffeine.newBuilder().expireAfterAccess(Duration.ofHours(4)).build(key -> new HashMap<>());
+        CacheUtils.handleBulletinCancellations("bulletin1", buildCancellationDataList() , bulletinsCache);
+        assertNull(CacheUtils.getTripCancellationMap("shouldNotExist", bulletinsCache));
+        assertTrue(CacheUtils.getTripCancellationMap("bulletin1", bulletinsCache).containsKey("trip1"));
+        assertTrue(CacheUtils.getTripCancellationMap("bulletin1", bulletinsCache).containsKey("trip2"));
+    }
+    
+    @Test
+    public void testGetTripCancellationMapNoNullFromCache() {
+        Cache<String, Map<String, CancellationData>> bulletinsCache =  Caffeine.newBuilder().expireAfterAccess(Duration.ofHours(4)).build(key -> new HashMap<>());
+        CacheUtils.handleBulletinCancellations("bulletin1", buildCancellationDataList() , bulletinsCache);
+        assertEquals(0, CacheUtils.getTripCancellationMapNoNull("shouldNotExist", bulletinsCache).size());
+        assertTrue(CacheUtils.getTripCancellationMap("bulletin1", bulletinsCache).containsKey("trip1"));
+        assertTrue(CacheUtils.getTripCancellationMap("bulletin1", bulletinsCache).containsKey("trip2"));
     }
 }

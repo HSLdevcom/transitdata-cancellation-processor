@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
 
 public class CacheUtils {
     
@@ -30,7 +31,7 @@ public class CacheUtils {
         List<CancellationData> cancellationDataList;
         
         // KEY: tripId, VALUE: cancellationData
-        Map<String, CancellationData> tripCancellationDataInCache = bulletinsCache.getIfPresent(bulletinId);
+        Map<String, CancellationData> tripCancellationDataInCache = getTripCancellationMap(bulletinId, bulletinsCache);
         
         // bulletin doesn't exist in the cache
         if (tripCancellationDataInCache == null || tripCancellationDataInCache.isEmpty()) {
@@ -107,10 +108,41 @@ public class CacheUtils {
         }
         
         // check
-        if (Objects.requireNonNull(bulletinsCache.getIfPresent(bulletinId)).keySet().size() != modifiedCancellationDataList.size()) {
+        if (getTripCancellationMapNoNull(bulletinId, bulletinsCache).keySet().size() != modifiedCancellationDataList.size()) {
             log.warn("Number of cancellations in bulletin does is not equal to number of cancellations in cache. BulletinId={}", bulletinId);
         }
         
         return cancellationDataList;
+    }
+    
+    /**
+     * Thread-safe implementation to get a value from Cafeine cache. This method does not modify the cache.
+     * @param bulletinId bulletin identifier
+     * @param bulletinsCache KEY: bulletinId, VALUE: Map<KEY: tripId, VALUE: cancellationData>
+     * @return map with KEY: tripId, VALUE: cancellationData (or null if no bulletin is found with given bulletin
+     * identifier)
+     */
+    public static Map<String, CancellationData> getTripCancellationMap(
+            String bulletinId, Cache<String, Map<String, CancellationData>> bulletinsCache) {
+        ConcurrentMap<String, Map<String, CancellationData>> cacheAsMap = bulletinsCache.asMap();
+        return cacheAsMap.get(bulletinId);
+    }
+    
+    /**
+     * Same as getTripCancellationMap method except that this method does not return null if no value is found with the given
+     * bulletin identifier. This method returns an empty map in this case.
+     * @param bulletinId bulletin identifier
+     * @param bulletinsCache KEY: bulletinId, VALUE: Map<KEY: tripId, VALUE: cancellationData>
+     * @return map with KEY: tripId, VALUE: cancellationData
+     */
+    public static Map<String, CancellationData> getTripCancellationMapNoNull(
+            String bulletinId, Cache<String, Map<String, CancellationData>> bulletinsCache) {
+        Map<String, CancellationData> tripCancellationMap = getTripCancellationMap(bulletinId, bulletinsCache);
+        
+        if (tripCancellationMap == null) {
+            return new HashMap<>();
+        }
+        
+        return tripCancellationMap;
     }
 }

@@ -5,6 +5,7 @@ import fi.hsl.common.config.ConfigParser;
 import fi.hsl.common.config.ConfigUtils;
 import fi.hsl.common.pulsar.PulsarApplication;
 import fi.hsl.common.pulsar.PulsarApplicationContext;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +48,7 @@ public class Main {
             throw e;
         }
         
-        if (digitransitDeveloperApiUri.isEmpty()) {
+        if (StringUtils.isBlank(digitransitDeveloperApiUri)) {
             throw new Exception("Failed to find Digitransit Developer API URI, exiting application");
         }
         
