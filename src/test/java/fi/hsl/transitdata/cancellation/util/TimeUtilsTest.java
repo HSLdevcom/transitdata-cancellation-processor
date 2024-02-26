@@ -111,7 +111,7 @@ public class TimeUtilsTest {
     @Test
     public void testGetDateAsString() {
         int unixTimestampInSeconds = 1704319200;
-        String dateAsString = TimeUtils.getDateAsString(unixTimestampInSeconds);
+        String dateAsString = TimeUtils.getDateAsString(unixTimestampInSeconds, "Europe/Helsinki");
 
         Instant expectedInstant = Instant.ofEpochSecond(unixTimestampInSeconds);
         String expected = LocalDateTime.ofInstant(expectedInstant, ZoneId.of("Europe/Helsinki")).format(DateTimeFormatter.ofPattern("yyyyMMdd"));

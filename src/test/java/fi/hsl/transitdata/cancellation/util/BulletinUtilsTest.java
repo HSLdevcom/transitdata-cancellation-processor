@@ -36,7 +36,7 @@ public class BulletinUtilsTest {
         trips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240102_La_1_0734", "20240102", "0734", 2, true));
         
         tripUtils.when(() -> TripUtils.getTripInfos(
-                anyList(), any(LocalDateTime.class), any(LocalDateTime.class), anyString())).thenReturn(trips);
+                anyList(), any(LocalDateTime.class), any(LocalDateTime.class), "Europe/Helsinki", anyString())).thenReturn(trips);
         
         InternalMessages.Bulletin bulletinMassCancellation = createBulletin(
                 InternalMessages.Bulletin.Impact.CANCELLED,

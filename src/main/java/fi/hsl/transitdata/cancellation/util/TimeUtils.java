@@ -74,12 +74,14 @@ public class TimeUtils {
     
     /**
      * Get date in String, for example '20240108'.
+     *
      * @param serviceDay Departure date of the trip. Format: Unix timestamp (local time) in seconds.
+     * @param timezone time zone
      * @return Date as string in format 'YYYYMMDD'
      */
-    public static String getDateAsString(Integer serviceDay) {
+    public static String getDateAsString(Integer serviceDay, String timezone) {
         Instant instant = Instant.ofEpochSecond(serviceDay);
-        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.of("Europe/Helsinki"));
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.of(timezone));
         return localDateTime.format(DATE_FORMATTER);
     }
     

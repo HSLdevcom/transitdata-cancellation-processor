@@ -32,12 +32,15 @@ public class AlertHandler implements IMessageHandler {
     // KEY: bulletinId, VALUE: Map<KEY: tripId, VALUE: cancellationData>
     private final Cache<String, Map<String, CancellationData>> bulletinsCache;
     
+    private final String timezone;
+    
     private final String digitransitDeveloperApiUri;
 
-    public AlertHandler(final PulsarApplicationContext context, String digitransitDeveloperApiUri) {
+    public AlertHandler(final PulsarApplicationContext context, String timezone, String digitransitDeveloperApiUri) {
         this.consumer = context.getConsumer();
         this.producer = context.getSingleProducer();
-
+        
+        this.timezone = timezone;
         this.digitransitDeveloperApiUri = digitransitDeveloperApiUri;
         
         this.bulletinsCache = Caffeine.newBuilder()
@@ -66,7 +69,7 @@ public class AlertHandler implements IMessageHandler {
                     log.info("Affected routes: {}", routeIds);
                     for (InternalMessages.Bulletin massCancellation : massCancellations) {
                         List<CancellationData> bulletinCancellations =
-                                BulletinUtils.createTripCancellations(massCancellation, digitransitDeveloperApiUri);
+                                BulletinUtils.createTripCancellations(massCancellation, timezone, digitransitDeveloperApiUri);
                         cancellationDataList.addAll(
                                 CacheUtils.handleBulletinCancellations(massCancellation.getBulletinId(),
                                         bulletinCancellations, bulletinsCache));

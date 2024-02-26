@@ -28,19 +28,20 @@ public class BulletinUtils {
     
     // One cancellation contains one trip
     // A route consists of many trips
-    public static List<CancellationData> createTripCancellations(InternalMessages.Bulletin massCancellation, String digitransitDeveloperApiUri) {
+    public static List<CancellationData> createTripCancellations(
+            InternalMessages.Bulletin massCancellation, String timezone, String digitransitDeveloperApiUri) {
         List<CancellationData> tripCancellations = new ArrayList<>();
         
         LocalDateTime validFrom = Instant.ofEpochMilli(
-                massCancellation.getValidFromUtcMs()).atZone(ZoneId.of("Europe/Helsinki")).toLocalDateTime();
+                massCancellation.getValidFromUtcMs()).atZone(ZoneId.of(timezone)).toLocalDateTime();
         
         LocalDateTime validTo = Instant.ofEpochMilli(
-                massCancellation.getValidToUtcMs()).atZone(ZoneId.of("Europe/Helsinki")).toLocalDateTime();
+                massCancellation.getValidToUtcMs()).atZone(ZoneId.of(timezone)).toLocalDateTime();
         
         List<String> routeIds = massCancellation.getAffectedRoutesList().stream().
                 map(InternalMessages.Bulletin.AffectedEntity::getEntityId).collect(Collectors.toList());
         
-        for (InternalMessages.TripInfo trip : TripUtils.getTripInfos(routeIds, validFrom, validTo, digitransitDeveloperApiUri)) {
+        for (InternalMessages.TripInfo trip : TripUtils.getTripInfos(routeIds, validFrom, validTo, timezone, digitransitDeveloperApiUri)) {
             InternalMessages.TripCancellation.Builder builder = InternalMessages.TripCancellation.newBuilder();
             long deviationCaseId = InternalMessages.TripCancellation.DeviationCasesType.CANCEL_DEPARTURE.getNumber();
             builder.setRouteId(removeHSLPrefixFromRouteId(trip.getRouteId()));
@@ -59,7 +60,8 @@ public class BulletinUtils {
             tripCancellations.add(data);
         }
         
-        log.info("Added {} cancellations from mass cancellation bulletin.{}", tripCancellations.size(), getBulletinLog(massCancellation));
+        log.info("Added {} cancellations from mass cancellation bulletin.{}",
+                tripCancellations.size(), getBulletinLog(massCancellation, timezone));
         
         Set<String> originalRouteIdsSet = new HashSet<>(routeIds);
         java.util.Set<String> tripRouteIdsSet = tripCancellations.stream().map(x -> x.getPayload().getRouteId()).collect(Collectors.toSet());
@@ -108,14 +110,14 @@ public class BulletinUtils {
         return hours + ":" + minutes + ":00";
     }
     
-    private static String getBulletinLog(InternalMessages.Bulletin massCancellation) {
+    private static String getBulletinLog(InternalMessages.Bulletin massCancellation, String timezone) {
         StringBuilder bulletinLog = new StringBuilder(" BULLETIN");
         
         LocalDateTime validFrom = Instant.ofEpochMilli(
-                massCancellation.getValidFromUtcMs()).atZone(ZoneId.of("Europe/Helsinki")).toLocalDateTime();
+                massCancellation.getValidFromUtcMs()).atZone(ZoneId.of(timezone)).toLocalDateTime();
         
         LocalDateTime validTo = Instant.ofEpochMilli(
-                massCancellation.getValidToUtcMs()).atZone(ZoneId.of("Europe/Helsinki")).toLocalDateTime();
+                massCancellation.getValidToUtcMs()).atZone(ZoneId.of(timezone)).toLocalDateTime();
         
         bulletinLog.append(" Id: ").
                 append(massCancellation.getBulletinId()).

@@ -107,11 +107,11 @@ public class TripUtils {
      * Get trip infos of a time period.
      */
     public static List<InternalMessages.TripInfo> getTripInfos(
-            List<String> routeIds, LocalDateTime validFrom, LocalDateTime validTo, String digitransitDeveloperApiUri) {
+            List<String> routeIds, LocalDateTime validFrom, LocalDateTime validTo, String timezone, String digitransitDeveloperApiUri) {
         List<String> dates = TimeUtils.getDatesAsList(validFrom, validTo);
 
         List<InternalMessages.TripInfo> tripInfos = dates.stream().flatMap(
-                dateAsString -> getTripInfos(dateAsString, routeIds, digitransitDeveloperApiUri).stream()
+                dateAsString -> getTripInfos(dateAsString, routeIds, timezone, digitransitDeveloperApiUri).stream()
         ).collect(Collectors.toList());
 
         List<InternalMessages.TripInfo> filteredTripInfos = filterTripInfos(tripInfos, validFrom, validTo);
@@ -215,11 +215,12 @@ public class TripUtils {
      *
      * @param date                       date as string, with format 'YYYYMMDD' (e.g. '20240131')
      * @param routeIds                   route identifiers
+     * @param timezone                   time zone
      * @param digitransitDeveloperApiUri Digitransit API URL
      * @return trip infos
      */
     public static List<InternalMessages.TripInfo> getTripInfos(
-            String date, List<String> routeIds, String digitransitDeveloperApiUri) {
+            String date, List<String> routeIds, String timezone, String digitransitDeveloperApiUri) {
         List<Route> routes = getRoutes(date, routeIds, digitransitDeveloperApiUri);
         log.info("Found {} routes (date={}, routeIds={}, digitransitDeveloperApiUri={})",
                 routes.size(), date, routeIds, digitransitDeveloperApiUri.startsWith("https://dev-api.digitransit.fi"));
@@ -232,7 +233,7 @@ public class TripUtils {
             }
 
             for (Trip trip : route.getTrips()) {
-                String operatingDay = TimeUtils.getDateAsString(trip.getDepartureStoptime().getServiceDay());
+                String operatingDay = TimeUtils.getDateAsString(trip.getDepartureStoptime().getServiceDay(), timezone);
                 String startTime = TimeUtils.getTimeAsString(trip.getDepartureStoptime().getScheduledDeparture());
 
                 InternalMessages.TripInfo.Builder builder = InternalMessages.TripInfo.newBuilder();

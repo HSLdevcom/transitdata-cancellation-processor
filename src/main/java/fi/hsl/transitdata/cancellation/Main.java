@@ -19,11 +19,13 @@ public class Main {
     public static void main(String[] args) {
         log.info("Starting CancellationProcessor");
         Config config = ConfigParser.createConfig();
+        String timezone = config.getString("processor.timezone");
+        log.info("Using timezone " + timezone);
         try (PulsarApplication app = PulsarApplication.newInstance(config)) {
             String digitransitDeveloperApiUri = getDigitransitDeveloperApiUri();
             
             PulsarApplicationContext context = app.getContext();
-            final AlertHandler handler = new AlertHandler(context, digitransitDeveloperApiUri);
+            final AlertHandler handler = new AlertHandler(context, timezone, digitransitDeveloperApiUri);
         
             log.info("Start handling the messages");
             app.launchWithHandler(handler);
