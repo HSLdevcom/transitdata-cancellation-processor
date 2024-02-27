@@ -12,6 +12,7 @@ import fi.hsl.transitdata.cancellation.util.BulletinUtils;
 
 import fi.hsl.transitdata.cancellation.util.CacheUtils;
 import org.apache.pulsar.client.api.*;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,12 +32,15 @@ public class AlertHandler implements IMessageHandler {
     // KEY: bulletinId, VALUE: Map<KEY: tripId, VALUE: cancellationData>
     private final Cache<String, Map<String, CancellationData>> bulletinsCache;
     
+    private final String timezone;
+    
     private final String digitransitDeveloperApiUri;
 
-    public AlertHandler(final PulsarApplicationContext context, String digitransitDeveloperApiUri) {
+    public AlertHandler(final PulsarApplicationContext context, String timezone, String digitransitDeveloperApiUri) {
         this.consumer = context.getConsumer();
         this.producer = context.getSingleProducer();
-
+        
+        this.timezone = timezone;
         this.digitransitDeveloperApiUri = digitransitDeveloperApiUri;
         
         this.bulletinsCache = Caffeine.newBuilder()
@@ -45,8 +49,7 @@ public class AlertHandler implements IMessageHandler {
     }
     
     @Override
-    // TODO: Siirrä messageHandler luokkaan?
-    public void handleMessage(final Message message) {
+    public void handleMessage(@NotNull final Message message) {
         try {
             List<CancellationData> cancellationDataList = new ArrayList<>();
             
@@ -66,7 +69,7 @@ public class AlertHandler implements IMessageHandler {
                     log.info("Affected routes: {}", routeIds);
                     for (InternalMessages.Bulletin massCancellation : massCancellations) {
                         List<CancellationData> bulletinCancellations =
-                                BulletinUtils.createTripCancellations(massCancellation, digitransitDeveloperApiUri);
+                                BulletinUtils.createTripCancellations(massCancellation, timezone, digitransitDeveloperApiUri);
                         cancellationDataList.addAll(
                                 CacheUtils.handleBulletinCancellations(massCancellation.getBulletinId(),
                                         bulletinCancellations, bulletinsCache));
@@ -81,8 +84,6 @@ public class AlertHandler implements IMessageHandler {
                 throw new Exception("Invalid protobuf schema");
             }
             
-            // Cachesta voidaan katsoa onko ko. peruutus jo lähetetty
-            // Jos peruutuksen linjoja muutetaan, voidaan cachesta katsoa mitkä lähdöt voidaan ottaa pois peruutuksista
             sendCancellations(cancellationDataList);
         } catch (final Exception e) {
             log.error("Exception while handling message", e);
@@ -109,7 +110,6 @@ public class AlertHandler implements IMessageHandler {
     }
     
     // This method is copied from transitdata-omm-cancellation-source
-    // TODO: Siirrä messageHandler luokkaan?
     private void sendPulsarMessage(InternalMessages.TripCancellation tripCancellation, long timestamp, String dvjId) throws PulsarClientException {
         try {
             producer.newMessage().value(tripCancellation.toByteArray())
@@ -118,13 +118,6 @@ public class AlertHandler implements IMessageHandler {
                     .property(TransitdataProperties.KEY_DVJ_ID, dvjId)
                     .property(TransitdataProperties.KEY_PROTOBUF_SCHEMA, TransitdataProperties.ProtobufSchema.InternalMessagesTripCancellation.toString())
                     .send();
-            /*
-            if (tripCancellation.getDeviationCasesType() == InternalMessages.TripCancellation.DeviationCasesType.CANCEL_DEPARTURE && tripCancellation.getAffectedDeparturesType() == InternalMessages.TripCancellation.AffectedDeparturesType.CANCEL_ENTIRE_DEPARTURE) {
-                log.info("Produced entire departure cancellation for trip: " + tripCancellation.getRouteId() + "/" +
-                        tripCancellation.getDirectionId() + "-" + tripCancellation.getStartTime() + "-" +
-                        tripCancellation.getStartDate());
-            }
-            */
         } catch (PulsarClientException pe) {
             log.error("Failed to send message to Pulsar", pe);
             throw pe;
