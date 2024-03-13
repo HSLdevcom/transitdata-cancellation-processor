@@ -30,8 +30,8 @@ public class TripUtils {
      *
      * @param date                       date as string, with format 'YYYYMMDD' (e.g. '20240131')
      * @param routeIds                   route identifiers
-     * @param digitransitDeveloperApiUri
-     * @return
+     * @param digitransitDeveloperApiUri Digitransit API URL
+     * @return routes
      */
     public static List<Route> getRoutes(String date, List<String> routeIds, String digitransitDeveloperApiUri) {
         List<Route> routes = new ArrayList<>();
@@ -73,7 +73,7 @@ public class TripUtils {
         }
 
         for (Document document : documents) {
-            Response response = null; // <2>
+            Response response;
             try {
                 response = client.executeSync(document);
             } catch (Exception e) {
@@ -100,25 +100,25 @@ public class TripUtils {
      */
     static List<String> addHSLPrefixToRouteIds(List<String> routeIds) {
         return routeIds.stream().map(
-                routeId -> routeId.startsWith("HSL:") ? routeId : "HSL:" + routeId).collect(Collectors.toList());
+                routeId -> routeId.startsWith("HSL:") ? routeId.trim() : "HSL:" + routeId.trim()).collect(Collectors.toList());
     }
 
     /**
      * Get trip infos of a time period.
      */
     public static List<InternalMessages.TripInfo> getTripInfos(
-            List<String> routeIds, LocalDateTime validFrom, LocalDateTime validTo, String digitransitDeveloperApiUri) {
+            List<String> routeIds, LocalDateTime validFrom, LocalDateTime validTo, String timezone, String digitransitDeveloperApiUri) {
         List<String> dates = TimeUtils.getDatesAsList(validFrom, validTo);
 
         List<InternalMessages.TripInfo> tripInfos = dates.stream().flatMap(
-                dateAsString -> getTripInfos(dateAsString, routeIds, digitransitDeveloperApiUri).stream()
+                dateAsString -> getTripInfos(dateAsString, routeIds, timezone, digitransitDeveloperApiUri).stream()
         ).collect(Collectors.toList());
 
         List<InternalMessages.TripInfo> filteredTripInfos = filterTripInfos(tripInfos, validFrom, validTo);
         return removeDuplicates(filteredTripInfos);
     }
 
-    static String getTripId(String originalTripId) {
+    static String getTripId(String originalTripId, String operatingDay) {
         String modifiedTripId;
 
         if (originalTripId.contains("Ma")) {
@@ -139,10 +139,31 @@ public class TripUtils {
             modifiedTripId = originalTripId;
         }
 
-        return modifiedTripId;
+        return modifiedTripId + "_" + operatingDay;
     }
-
-    private static List<InternalMessages.TripInfo> removeDuplicates(List<InternalMessages.TripInfo> trips) {
+    
+    /**
+     * Remove duplicate trip info objects. Duplicate objects have the same route, operating day, start time and
+     * direction.
+     *
+     * For example, a GraphQL search may return trips having the same route (HSL:1030), operating day (20240220),
+     * start time (1408) and direction (1). GTFS identifiers might be like this:
+     * HSL:1030_20240212_Ma_2_1408
+     * HSL:1030_20240219_Ti_2_1408
+     * HSL:1030_20240226_Ke_2_1408
+     * HSL:1030_20240212_To_2_1408
+     * HSL:1030_20240226_Pe_2_1408
+     *
+     * These trips are replaced by one trip that has trip identifier:
+     * HSL:1030_20240212_MaTiKeToPe_2_1408_20240220
+     *
+     * That is,
+     * 1) Weekday (Ma, Ti, Ke, To, Pe) or (La, Su) is replaced by "MaTiKeToPe" or "LaSu".
+     * 2) Operating day, in this case "_20240220", is added to the ending
+     * @param trips list of trip info objects that may contain duplicates
+     * @return list of trip info objects with duplicates removed
+     */
+    static List<InternalMessages.TripInfo> removeDuplicates(List<InternalMessages.TripInfo> trips) {
         Set<String> seen = new HashSet<>();
         List<InternalMessages.TripInfo> tripsNoDuplicates = new ArrayList<>();
         for (InternalMessages.TripInfo trip : trips) {
@@ -159,7 +180,7 @@ public class TripUtils {
         for (InternalMessages.TripInfo trip : tripsNoDuplicates) {
             InternalMessages.TripInfo.Builder builder = InternalMessages.TripInfo.newBuilder();
             builder.setRouteId(trip.getRouteId());
-            builder.setTripId(getTripId(trip.getTripId()));
+            builder.setTripId(getTripId(trip.getTripId(), trip.getOperatingDay()));
             builder.setOperatingDay(trip.getOperatingDay());
             builder.setStartTime(trip.getStartTime());
             builder.setDirectionId(trip.getDirectionId());
@@ -194,21 +215,16 @@ public class TripUtils {
      *
      * @param date                       date as string, with format 'YYYYMMDD' (e.g. '20240131')
      * @param routeIds                   route identifiers
-     * @param digitransitDeveloperApiUri
-     * @return
+     * @param timezone                   time zone
+     * @param digitransitDeveloperApiUri Digitransit API URL
+     * @return trip infos
      */
     public static List<InternalMessages.TripInfo> getTripInfos(
-            String date, List<String> routeIds, String digitransitDeveloperApiUri) {
+            String date, List<String> routeIds, String timezone, String digitransitDeveloperApiUri) {
         List<Route> routes = getRoutes(date, routeIds, digitransitDeveloperApiUri);
         log.info("Found {} routes (date={}, routeIds={}, digitransitDeveloperApiUri={})",
                 routes.size(), date, routeIds, digitransitDeveloperApiUri.startsWith("https://dev-api.digitransit.fi"));
-
-        if (routes == null) {
-            throw new RuntimeException("Failed to get routes (date=" + date + ", routeIds=" + routeIds
-                    + ", digitransitDeveloperApiUri="
-                    + digitransitDeveloperApiUri.startsWith("https://dev-api.digitransit.fi") + ")");
-        }
-
+        
         List<InternalMessages.TripInfo> tripInfos = new ArrayList<>();
 
         for (Route route : routes) {
@@ -217,7 +233,7 @@ public class TripUtils {
             }
 
             for (Trip trip : route.getTrips()) {
-                String operatingDay = TimeUtils.getDateAsString(trip.getDepartureStoptime().getServiceDay());
+                String operatingDay = TimeUtils.getDateAsString(trip.getDepartureStoptime().getServiceDay(), timezone);
                 String startTime = TimeUtils.getTimeAsString(trip.getDepartureStoptime().getScheduledDeparture());
 
                 InternalMessages.TripInfo.Builder builder = InternalMessages.TripInfo.newBuilder();
@@ -225,7 +241,7 @@ public class TripUtils {
                 builder.setTripId(trip.getGtfsId());
                 builder.setOperatingDay(operatingDay);
                 builder.setStartTime(startTime);
-                builder.setDirectionId(Integer.valueOf(trip.getDirectionId()));
+                builder.setDirectionId(Integer.parseInt(trip.getDirectionId()));
                 tripInfos.add(builder.build());
             }
         }

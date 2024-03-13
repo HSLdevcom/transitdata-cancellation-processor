@@ -1,10 +1,8 @@
 package fi.hsl.transitdata.cancellation.util;
 
 import fi.hsl.common.transitdata.proto.InternalMessages;
-import fi.hsl.transitdata.cancellation.domain.CancellationData;
 import org.junit.Test;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -13,8 +11,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 
 public class BulletinUtilsTest {
     @Test
@@ -29,17 +26,17 @@ public class BulletinUtilsTest {
     public void testFilterMassCancellations() {
         List<InternalMessages.Bulletin> outputBulletins = BulletinUtils.filterMassCancellationsFromBulletins(initializeTestBulletin());
         
-        assertTrue(outputBulletins.size() == 2);
+        assertEquals(2, outputBulletins.size());
     }
     
     private static List<InternalMessages.Bulletin> initializeTestTrips(MockedStatic<TripUtils> tripUtils) {
         List<InternalMessages.TripInfo> trips = new ArrayList<>();
-        trips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240102_Ti_2_1415", "20240102", "1415", 1));
-        trips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240102_Ti_2_1515", "20240102", "1515", 1));
-        trips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240102_La_1_0734", "20240102", "0734", 2));
+        trips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240102_Ti_2_1415", "20240102", "1415", 1, true));
+        trips.add(TripUtilsTest.createTripInfo("HSL:4611", "HSL:4611_20240102_Ti_2_1515", "20240102", "1515", 1, true));
+        trips.add(TripUtilsTest.createTripInfo("HSL:1079", "HSL:1079_20240102_La_1_0734", "20240102", "0734", 2, true));
         
         tripUtils.when(() -> TripUtils.getTripInfos(
-                any(List.class), any(LocalDateTime.class), any(LocalDateTime.class), anyString())).thenReturn(trips);
+                anyList(), any(LocalDateTime.class), any(LocalDateTime.class), "Europe/Helsinki", anyString())).thenReturn(trips);
         
         InternalMessages.Bulletin bulletinMassCancellation = createBulletin(
                 InternalMessages.Bulletin.Impact.CANCELLED,
@@ -106,7 +103,7 @@ public class BulletinUtilsTest {
         List<InternalMessages.Bulletin.AffectedEntity> entities = Stream.of(routeIds)
                 .map(routeId -> InternalMessages.Bulletin.AffectedEntity.newBuilder().setEntityId(routeId).build())
                 .collect(Collectors.toList());
-        InternalMessages.Bulletin bulletin = InternalMessages.Bulletin.newBuilder()
+        return InternalMessages.Bulletin.newBuilder()
                 .addAllAffectedRoutes(entities)
                 .setImpact(impact)
                 .setPriority(priority)
@@ -114,7 +111,5 @@ public class BulletinUtilsTest {
                 .setValidFromUtcMs(System.currentTimeMillis())
                 .setValidToUtcMs(System.currentTimeMillis())
                 .build();
-        
-        return bulletin;
     }
 }

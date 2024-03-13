@@ -1,8 +1,6 @@
 package fi.hsl.transitdata.cancellation.util;
 
 import org.apache.commons.lang3.time.DurationFormatUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -14,18 +12,16 @@ import java.util.List;
 
 public class TimeUtils {
 
-    private static final Logger log = LoggerFactory.getLogger(TimeUtils.class);
-    
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd HHmm");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
     
     /**
      * Returns dates within the given time period. For example, if time period is from 2024-01-02 to 2024-01-05, this
-     * method returns the following dates as strings: '20240102', '20240103', '20240104' and '20240105'
+     * method returns the following dates as strings: '20240102', '20240103', '20240104' and '20240105'.
+     * Throws RuntimeException if parameter validFrom and/or validTo is null, or if validFrom is after validTo.
      * @param validFrom alert valid from timestamp
      * @param validTo alert valid to timestamp
      * @return list of dates as string, each date has format 'YYYYMMDD'
-     * @exception throws RuntimeException if parameter validFrom and/or validTo is null, or if validFrom is after validTo
      */
     public static List<String> getDatesAsList(LocalDateTime validFrom, LocalDateTime validTo) {
         if (validFrom == null && validTo == null) {
@@ -69,7 +65,7 @@ public class TimeUtils {
      * Returns date object
      * @param dateAsString date as format 'YYYYMMDD'
      * @param timeAsString time as format 'HHMM'
-     * @return
+     * @return date object
      */
     static LocalDateTime getDate(String dateAsString, String timeAsString) {
         String timestampAsString = dateAsString + " " + timeAsString;
@@ -78,12 +74,14 @@ public class TimeUtils {
     
     /**
      * Get date in String, for example '20240108'.
+     *
      * @param serviceDay Departure date of the trip. Format: Unix timestamp (local time) in seconds.
+     * @param timezone time zone
      * @return Date as string in format 'YYYYMMDD'
      */
-    public static String getDateAsString(Integer serviceDay) {
+    public static String getDateAsString(Integer serviceDay, String timezone) {
         Instant instant = Instant.ofEpochSecond(serviceDay);
-        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.of("Europe/Helsinki"));
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.of(timezone));
         return localDateTime.format(DATE_FORMATTER);
     }
     
@@ -97,7 +95,7 @@ public class TimeUtils {
     }
     
     /**
-     * Convert given LocalDateTime object into two strings according to 30 hour clock. Examples:
+     * Convert given LocalDateTime object into two strings according to 30-hour clock. Examples:
      * Input: '2024-01-29 15:50', Output: KEY '20240129', VALUE '1550'
      * Input: '2024-01-30 00:29', Output: KEY '20240129', VALUE '2429'
      * @param someDateTime datetime in LocalDateTime format
@@ -109,7 +107,7 @@ public class TimeUtils {
         
         if (someDateTime.getHour() < 6) {
             LocalDateTime newDateTime = someDateTime.minusDays(1);
-            int localTime = Integer.valueOf(newDateTime.format(timeFormatter));
+            int localTime = Integer.parseInt(newDateTime.format(timeFormatter));
             String newLocalTime = String.valueOf(2400 + localTime);
             return new AbstractMap.SimpleEntry<>(newDateTime.format(dateFormatter), newLocalTime);
         }
@@ -124,7 +122,7 @@ public class TimeUtils {
      * @param startTime time e.g. '1550'
      * @param validFromAsSimpleEntry KEY: date (e.g. "20242901"), VALUE: time (e.g. "1542")
      * @param validToAsSimpleEntry KEY: date (e.g. "20242901"), VALUE: time (e.g. "1542")
-     * @return
+     * @return boolean value
      */
     public static boolean isBetween(
             String operatingDay,
@@ -132,14 +130,10 @@ public class TimeUtils {
             AbstractMap.SimpleEntry<String, String> validFromAsSimpleEntry,
             AbstractMap.SimpleEntry<String, String> validToAsSimpleEntry) {
         
-        long operatingTimestamp = Long.valueOf(operatingDay + startTime);
-        long validFrom = Long.valueOf(validFromAsSimpleEntry.getKey() + validFromAsSimpleEntry.getValue());
-        long validTo = Long.valueOf(validToAsSimpleEntry.getKey() + validToAsSimpleEntry.getValue());
+        long operatingTimestamp = Long.parseLong(operatingDay + startTime);
+        long validFrom = Long.parseLong(validFromAsSimpleEntry.getKey() + validFromAsSimpleEntry.getValue());
+        long validTo = Long.parseLong(validToAsSimpleEntry.getKey() + validToAsSimpleEntry.getValue());
         
-        if (operatingTimestamp >= validFrom && operatingTimestamp <= validTo) {
-            return true;
-        }
-        
-        return false;
+        return operatingTimestamp >= validFrom && operatingTimestamp <= validTo;
     }
 }

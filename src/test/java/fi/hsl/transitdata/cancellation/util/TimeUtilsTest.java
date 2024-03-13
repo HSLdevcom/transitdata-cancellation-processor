@@ -10,6 +10,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap;
 import java.util.List;
 
+import static fi.hsl.transitdata.cancellation.util.TimeUtils.getDatesAsList;
 import static org.junit.Assert.*;
 
 public class TimeUtilsTest {
@@ -25,7 +26,7 @@ public class TimeUtilsTest {
         LocalDateTime validFrom = getTestDate("2024-01-04 23:05:00");
         LocalDateTime validTo = getTestDate("2024-01-05 06:30:45");
         
-        List<String> dates = TimeUtils.getDatesAsList(validFrom, validTo);
+        List<String> dates = getDatesAsList(validFrom, validTo);
         assertEquals(2, dates.size());
         assertEquals("20240104", dates.get(0));
         assertEquals("20240105", dates.get(1));
@@ -36,7 +37,7 @@ public class TimeUtilsTest {
         LocalDateTime validFrom = getTestDate("2024-01-04 10:05:00");
         LocalDateTime validTo = getTestDate("2024-01-06 18:30:45");
         
-        List<String> dates = TimeUtils.getDatesAsList(validFrom, validTo);
+        List<String> dates = getDatesAsList(validFrom, validTo);
         assertEquals(3, dates.size());
         assertEquals("20240104", dates.get(0));
         assertEquals("20240105", dates.get(1));
@@ -48,7 +49,7 @@ public class TimeUtilsTest {
         LocalDateTime validFrom = getTestDate("2024-01-04 10:05:00");
         LocalDateTime validTo = getTestDate("2024-01-04 18:30:45");
         
-        List<String> dates = TimeUtils.getDatesAsList(validFrom, validTo);
+        List<String> dates = getDatesAsList(validFrom, validTo);
         assertEquals(1, dates.size());
         assertEquals("20240104", dates.get(0));
     }
@@ -58,7 +59,7 @@ public class TimeUtilsTest {
         LocalDateTime validFrom = getTestDate("2024-01-30 10:05:00");
         LocalDateTime validTo = getTestDate("2024-02-02 18:30:45");
         
-        List<String> dates = TimeUtils.getDatesAsList(validFrom, validTo);
+        List<String> dates = getDatesAsList(validFrom, validTo);
         assertEquals(4, dates.size());
         assertEquals("20240130", dates.get(0));
         assertEquals("20240131", dates.get(1));
@@ -68,29 +69,24 @@ public class TimeUtilsTest {
     
     @Test
     public void testGetDatesValidFromIsNull() {
-        LocalDateTime validFrom = null;
         LocalDateTime validTo = getTestDate("2024-01-06 18:30:45");
         
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> TimeUtils.getDatesAsList(validFrom, validTo));
-        assertTrue(thrown.getMessage().equals("validFrom is null"));
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> getDatesAsList(null, validTo));
+        assertEquals("validFrom is null", thrown.getMessage());
     }
     
     @Test
     public void testGetDatesValidToIsNull() {
         LocalDateTime validFrom = getTestDate("2024-01-06 18:30:45");
-        LocalDateTime validTo = null;
         
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> TimeUtils.getDatesAsList(validFrom, validTo));
-        assertTrue(thrown.getMessage().equals("validTo is null"));
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> getDatesAsList(validFrom, null));
+        assertEquals("validTo is null", thrown.getMessage());
     }
     
     @Test
     public void testGetDatesBothInputParametersAreNull() {
-        LocalDateTime validFrom = null;
-        LocalDateTime validTo = null;
-        
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> TimeUtils.getDatesAsList(validFrom, validTo));
-        assertTrue(thrown.getMessage().equals("validFrom and validTo are null"));
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> getDatesAsList(null, null));
+        assertEquals("validFrom and validTo are null", thrown.getMessage());
     }
     
     @Test
@@ -98,8 +94,8 @@ public class TimeUtilsTest {
         LocalDateTime validFrom = getTestDate("2024-01-06 18:30:45");
         LocalDateTime validTo = getTestDate("2024-01-04 10:05:00");
         
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> TimeUtils.getDatesAsList(validFrom, validTo));
-        assertTrue(thrown.getMessage().equals("validFrom is after validTo"));
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> getDatesAsList(validFrom, validTo));
+        assertEquals("validFrom is after validTo", thrown.getMessage());
     }
     
     @Test
@@ -115,7 +111,7 @@ public class TimeUtilsTest {
     @Test
     public void testGetDateAsString() {
         int unixTimestampInSeconds = 1704319200;
-        String dateAsString = TimeUtils.getDateAsString(unixTimestampInSeconds);
+        String dateAsString = TimeUtils.getDateAsString(unixTimestampInSeconds, "Europe/Helsinki");
 
         Instant expectedInstant = Instant.ofEpochSecond(unixTimestampInSeconds);
         String expected = LocalDateTime.ofInstant(expectedInstant, ZoneId.of("Europe/Helsinki")).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
