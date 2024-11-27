@@ -37,14 +37,8 @@ public class Main {
     private static String getDigitransitDeveloperApiUri() throws Exception {
         String digitransitDeveloperApiUri;
         
-        if (ConfigUtils.getEnv("FILEPATH_DIGITRANSIT_DEVAPI_SECRET").isEmpty()) {
-            throw new Exception("Environment variable FILEPATH_DIGITRANSIT_DEVAPI_SECRET is missing");
-        }
-        
         try {
-            final String secretFilePath = ConfigUtils.getEnv("FILEPATH_DIGITRANSIT_DEVAPI_SECRET").get();
-            digitransitDeveloperApiUri = new Scanner(new File(secretFilePath))
-                    .useDelimiter("\\Z").next();
+            digitransitDeveloperApiUri = System.getenv("TRANSITDATA_PUBTRANS_CONN_STRING");
         } catch (Exception e) {
             log.error("Failed to read Digitransit Developer API URI from secrets", e);
             throw e;
