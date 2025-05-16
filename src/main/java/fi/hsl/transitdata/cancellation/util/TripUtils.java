@@ -55,15 +55,19 @@ public class TripUtils {
                             field("id"),
                             field("gtfsId"),
                             field(
-                                    "trips",
-                                    field("gtfsId"),
-                                    field("directionId"),
-                                    field("activeDates"),
+                                    "patterns",
                                     field(
-                                            "departureStoptime",
+                                            "tripsForDate",
                                             args(arg("serviceDate", date)),
-                                            field("serviceDay"),
-                                            field("scheduledDeparture")
+                                            field("gtfsId"),
+                                            field("directionId"),
+                                            field("activeDates"),
+                                            field(
+                                                    "departureStoptime",
+                                                    args(arg("serviceDate", date)),
+                                                    field("serviceDay"),
+                                                    field("scheduledDeparture")
+                                            )
                                     )
                             )
                     )
