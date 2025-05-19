@@ -232,7 +232,7 @@ public class TripUtils {
         List<InternalMessages.TripInfo> tripInfos = new ArrayList<>();
 
         for (Route route : routes) {
-            if (route == null) {
+            if (route == null || route.getTrips() == null) {
                 continue;
             }
 
