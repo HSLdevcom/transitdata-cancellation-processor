@@ -1,9 +1,9 @@
 package fi.hsl.transitdata.cancellation.util;
 
 import fi.hsl.common.transitdata.proto.InternalMessages;
+import fi.hsl.transitdata.cancellation.schema.Pattern;
 import fi.hsl.transitdata.cancellation.schema.Route;
-import fi.hsl.transitdata.cancellation.schema.Trip;
-import io.smallrye.graphql.client.GraphQLError;
+import fi.hsl.transitdata.cancellation.schema.TripsForDate;
 import io.smallrye.graphql.client.Response;
 import io.smallrye.graphql.client.core.Document;
 import io.smallrye.graphql.client.dynamic.api.DynamicGraphQLClient;
@@ -81,12 +81,6 @@ public class TripUtils {
             Response response;
             try {
                 response = client.executeSync(document);
-                
-                log.info("GraphQL response data: {}", response.getData());
-                
-                for (GraphQLError error : response.getErrors()){
-                    log.error("GraphQL response error: {}", error.getMessage());
-                }
             } catch (Exception e) {
                 throw new RuntimeException("Failed to get trip data", e);
             }
@@ -239,29 +233,30 @@ public class TripUtils {
         List<InternalMessages.TripInfo> tripInfos = new ArrayList<>();
 
         for (Route route : routes) {
-            if (route == null || route.getTrips() == null) {
+            if (route == null || route.getPatterns() == null) {
                 log.info("Route is null or has no trips, skipping");
                 continue;
             }
             
-            if (route.getTrips().isEmpty()) {
-                log.info("Route {} has no trips, skipping", route.getGtfsId());
-                continue;
-            }
-            
-            log.info("Route {} has {} trips", route.getGtfsId(), route.getTrips().size());
-
-            for (Trip trip : route.getTrips()) {
-                String operatingDay = TimeUtils.getDateAsString(trip.getDepartureStoptime().getServiceDay(), timezone);
-                String startTime = TimeUtils.getTimeAsString(trip.getDepartureStoptime().getScheduledDeparture());
-
-                InternalMessages.TripInfo.Builder builder = InternalMessages.TripInfo.newBuilder();
-                builder.setRouteId(route.getGtfsId());
-                builder.setTripId(trip.getGtfsId());
-                builder.setOperatingDay(operatingDay);
-                builder.setStartTime(startTime);
-                builder.setDirectionId(Integer.parseInt(trip.getDirectionId()));
-                tripInfos.add(builder.build());
+            for (Pattern pattern : route.getPatterns()) {
+                List<TripsForDate> tripsForDate = pattern.getTripsForDate();
+                if (tripsForDate == null) {
+                    log.info("Pattern has no trips, skipping");
+                    continue;
+                }
+                for (TripsForDate trip : tripsForDate) {
+                    String operatingDay = TimeUtils.getDateAsString(trip.getDepartureStoptime().getServiceDay(), timezone);
+                    String startTime = TimeUtils.getTimeAsString(trip.getDepartureStoptime().getScheduledDeparture());
+                    
+                    InternalMessages.TripInfo tripInfo = InternalMessages.TripInfo.newBuilder()
+                            .setRouteId(route.getGtfsId())
+                            .setTripId(trip.getGtfsId())
+                            .setOperatingDay(operatingDay)
+                            .setStartTime(startTime)
+                            .setDirectionId(Integer.parseInt(trip.getDirectionId()))
+                            .build();
+                    tripInfos.add(tripInfo);
+                }
             }
         }
 
