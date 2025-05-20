@@ -239,22 +239,23 @@ public class TripUtils {
             }
             
             for (Pattern pattern : route.getPatterns()) {
-                if (pattern.getTripsForDate() == null) {
+                List<TripsForDate> tripsForDate = pattern.getTripsForDate();
+                if (tripsForDate == null) {
                     log.info("Pattern has no trips, skipping");
                     continue;
                 }
-                
-                for (TripsForDate trip : pattern.getTripsForDate()) {
+                for (TripsForDate trip : tripsForDate) {
                     String operatingDay = TimeUtils.getDateAsString(trip.getDepartureStoptime().getServiceDay(), timezone);
                     String startTime = TimeUtils.getTimeAsString(trip.getDepartureStoptime().getScheduledDeparture());
                     
-                    InternalMessages.TripInfo.Builder builder = InternalMessages.TripInfo.newBuilder();
-                    builder.setRouteId(route.getGtfsId());
-                    builder.setTripId(trip.getGtfsId());
-                    builder.setOperatingDay(operatingDay);
-                    builder.setStartTime(startTime);
-                    builder.setDirectionId(Integer.parseInt(trip.getDirectionId()));
-                    tripInfos.add(builder.build());
+                    InternalMessages.TripInfo tripInfo = InternalMessages.TripInfo.newBuilder()
+                            .setRouteId(route.getGtfsId())
+                            .setTripId(trip.getGtfsId())
+                            .setOperatingDay(operatingDay)
+                            .setStartTime(startTime)
+                            .setDirectionId(Integer.parseInt(trip.getDirectionId()))
+                            .build();
+                    tripInfos.add(tripInfo);
                 }
             }
         }
