@@ -233,8 +233,16 @@ public class TripUtils {
 
         for (Route route : routes) {
             if (route == null || route.getTrips() == null) {
+                log.info("Route is null or has no trips, skipping");
                 continue;
             }
+            
+            if (route.getTrips().isEmpty()) {
+                log.info("Route {} has no trips, skipping", route.getGtfsId());
+                continue;
+            }
+            
+            log.info("Route {} has {} trips", route.getGtfsId(), route.getTrips().size());
 
             for (Trip trip : route.getTrips()) {
                 String operatingDay = TimeUtils.getDateAsString(trip.getDepartureStoptime().getServiceDay(), timezone);
