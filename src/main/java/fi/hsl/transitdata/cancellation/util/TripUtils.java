@@ -3,6 +3,7 @@ package fi.hsl.transitdata.cancellation.util;
 import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.cancellation.schema.Route;
 import fi.hsl.transitdata.cancellation.schema.Trip;
+import io.smallrye.graphql.client.GraphQLError;
 import io.smallrye.graphql.client.Response;
 import io.smallrye.graphql.client.core.Document;
 import io.smallrye.graphql.client.dynamic.api.DynamicGraphQLClient;
@@ -80,6 +81,12 @@ public class TripUtils {
             Response response;
             try {
                 response = client.executeSync(document);
+                
+                log.info("GraphQL response data: {}", response.getData());
+                
+                for (GraphQLError error : response.getErrors()){
+                    log.error("GraphQL response error: {}", error.getMessage());
+                }
             } catch (Exception e) {
                 throw new RuntimeException("Failed to get trip data", e);
             }
