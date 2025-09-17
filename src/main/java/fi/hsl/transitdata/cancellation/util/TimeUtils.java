@@ -14,7 +14,7 @@ public class TimeUtils {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd HHmm");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
-    
+
     /**
      * Returns dates within the given time period. For example, if time period is from 2024-01-02 to 2024-01-05, this
      * method returns the following dates as strings: '20240102', '20240103', '20240104' and '20240105'.
@@ -33,34 +33,34 @@ public class TimeUtils {
         } else if (validFrom.isAfter(validTo)) {
             throw new RuntimeException("validFrom is after validTo");
         }
-        
+
         List<String> dates = new ArrayList<>();
-        
+
         String validFromAsString = getDateAsString(validFrom);
         String validToAsString = getDateAsString(validTo);
-        
+
         LocalDateTime nextDate = validFrom;
         String nextDateAsString = validFromAsString;
         dates.add(validFromAsString);
-        
+
         while (!validToAsString.equals(nextDateAsString)) {
             nextDate = getNextDate(nextDate);
             nextDateAsString = getDateAsString(nextDate);
             dates.add(nextDateAsString);
         }
-        
+
         return dates;
     }
-    
+
     // Return date as format 'YYYYMMDD', for example '20240102'
     private static String getDateAsString(LocalDateTime someDate) {
         return someDate.format(DATE_FORMATTER);
     }
-    
+
     private static LocalDateTime getNextDate(LocalDateTime someDate) {
         return someDate.plusDays(1);
     }
-    
+
     /**
      * Returns date object
      * @param dateAsString date as format 'YYYYMMDD'
@@ -71,7 +71,7 @@ public class TimeUtils {
         String timestampAsString = dateAsString + " " + timeAsString;
         return LocalDateTime.parse(timestampAsString, DATE_TIME_FORMATTER);
     }
-    
+
     /**
      * Get date in String, for example '20240108'.
      *
@@ -84,7 +84,7 @@ public class TimeUtils {
         LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.of(timezone));
         return localDateTime.format(DATE_FORMATTER);
     }
-    
+
     /**
      * Get time in string, for example '1555'.
      * @param scheduledDeparture Scheduled departure time. Format: seconds since midnight of the departure date.
@@ -93,7 +93,7 @@ public class TimeUtils {
     public static String getTimeAsString(Integer scheduledDeparture) {
         return DurationFormatUtils.formatDuration(scheduledDeparture * 1000, "HHmm", true);
     }
-    
+
     /**
      * Convert given LocalDateTime object into two strings according to 30-hour clock. Examples:
      * Input: '2024-01-29 15:50', Output: KEY '20240129', VALUE '1550'
@@ -104,17 +104,17 @@ public class TimeUtils {
     public static AbstractMap.SimpleEntry<String, String> convertInto30hClockStrings(LocalDateTime someDateTime) {
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HHmm");
-        
+
         if (someDateTime.getHour() < 6) {
             LocalDateTime newDateTime = someDateTime.minusDays(1);
             int localTime = Integer.parseInt(newDateTime.format(timeFormatter));
             String newLocalTime = String.valueOf(2400 + localTime);
             return new AbstractMap.SimpleEntry<>(newDateTime.format(dateFormatter), newLocalTime);
         }
-        
+
         return new AbstractMap.SimpleEntry<>(someDateTime.format(dateFormatter), someDateTime.format(timeFormatter));
     }
-    
+
     /**
      * Return boolean value that indicates whether the given timestamp (operatingDay + startTime) is between the
      * validFrom and validTo timestamps.
@@ -124,16 +124,14 @@ public class TimeUtils {
      * @param validToAsSimpleEntry KEY: date (e.g. "20242901"), VALUE: time (e.g. "1542")
      * @return boolean value
      */
-    public static boolean isBetween(
-            String operatingDay,
-            String startTime,
+    public static boolean isBetween(String operatingDay, String startTime,
             AbstractMap.SimpleEntry<String, String> validFromAsSimpleEntry,
             AbstractMap.SimpleEntry<String, String> validToAsSimpleEntry) {
-        
+
         long operatingTimestamp = Long.parseLong(operatingDay + startTime);
         long validFrom = Long.parseLong(validFromAsSimpleEntry.getKey() + validFromAsSimpleEntry.getValue());
         long validTo = Long.parseLong(validToAsSimpleEntry.getKey() + validToAsSimpleEntry.getValue());
-        
+
         return operatingTimestamp >= validFrom && operatingTimestamp <= validTo;
     }
 }
