@@ -39,40 +39,20 @@ public class TripUtils {
         Vertx vertx = Vertx.vertx();
         List<String> fixedRouteIds = addHSLPrefixToRouteIds(routeIds);
 
-        DynamicGraphQLClient client = new VertxDynamicGraphQLClientBuilder()
-                .url(digitransitDeveloperApiUri)
-                .vertx(vertx)
-                .build();
+        DynamicGraphQLClient client = new VertxDynamicGraphQLClientBuilder().url(digitransitDeveloperApiUri)
+                .vertx(vertx).build();
 
         List<Document> documents = new ArrayList<>();
 
         for (String id : fixedRouteIds) {
             List<String> singletonId = Collections.singletonList(id);
 
-            Document document = document(operation(
-                    field(
-                            "routes",
-                            args(arg("ids", singletonId)),
-                            field("id"),
-                            field("gtfsId"),
-                            field(
-                                    "patterns",
-                                    field(
-                                            "tripsForDate",
-                                            args(arg("serviceDate", date)),
-                                            field("gtfsId"),
-                                            field("directionId"),
-                                            field("activeDates"),
-                                            field(
-                                                    "departureStoptime",
-                                                    args(arg("serviceDate", date)),
-                                                    field("serviceDay"),
-                                                    field("scheduledDeparture")
-                                            )
-                                    )
-                            )
-                    )
-            ));
+            Document document = document(operation(field("routes", args(arg("ids", singletonId)), field("id"),
+                    field("gtfsId"),
+                    field("patterns",
+                            field("tripsForDate", args(arg("serviceDate", date)), field("gtfsId"), field("directionId"),
+                                    field("activeDates"), field("departureStoptime", args(arg("serviceDate", date)),
+                                            field("serviceDay"), field("scheduledDeparture")))))));
 
             documents.add(document);
         }
@@ -104,20 +84,20 @@ public class TripUtils {
      * Returns routeIds in format: 'HSL:1234'
      */
     static List<String> addHSLPrefixToRouteIds(List<String> routeIds) {
-        return routeIds.stream().map(
-                routeId -> routeId.startsWith("HSL:") ? routeId.trim() : "HSL:" + routeId.trim()).collect(Collectors.toList());
+        return routeIds.stream().map(routeId -> routeId.startsWith("HSL:") ? routeId.trim() : "HSL:" + routeId.trim())
+                .collect(Collectors.toList());
     }
 
     /**
      * Get trip infos of a time period.
      */
-    public static List<InternalMessages.TripInfo> getTripInfos(
-            List<String> routeIds, LocalDateTime validFrom, LocalDateTime validTo, String timezone, String digitransitDeveloperApiUri) {
+    public static List<InternalMessages.TripInfo> getTripInfos(List<String> routeIds, LocalDateTime validFrom,
+            LocalDateTime validTo, String timezone, String digitransitDeveloperApiUri) {
         List<String> dates = TimeUtils.getDatesAsList(validFrom, validTo);
 
         List<InternalMessages.TripInfo> tripInfos = dates.stream().flatMap(
-                dateAsString -> getTripInfos(dateAsString, routeIds, timezone, digitransitDeveloperApiUri).stream()
-        ).collect(Collectors.toList());
+                dateAsString -> getTripInfos(dateAsString, routeIds, timezone, digitransitDeveloperApiUri).stream())
+                .collect(Collectors.toList());
 
         List<InternalMessages.TripInfo> filteredTripInfos = filterTripInfos(tripInfos, validFrom, validTo);
         return removeDuplicates(filteredTripInfos);
@@ -146,7 +126,7 @@ public class TripUtils {
 
         return modifiedTripId + "_" + operatingDay;
     }
-    
+
     /**
      * Remove duplicate trip info objects. Duplicate objects have the same route, operating day, start time and
      * direction.
@@ -172,8 +152,8 @@ public class TripUtils {
         Set<String> seen = new HashSet<>();
         List<InternalMessages.TripInfo> tripsNoDuplicates = new ArrayList<>();
         for (InternalMessages.TripInfo trip : trips) {
-            String key = trip.getRouteId() + "--" + trip.getOperatingDay() + "--"
-                    + trip.getStartTime() + "--" + trip.getDirectionId();
+            String key = trip.getRouteId() + "--" + trip.getOperatingDay() + "--" + trip.getStartTime() + "--"
+                    + trip.getDirectionId();
             if (!seen.contains(key)) {
                 seen.add(key);
                 tripsNoDuplicates.add(trip);
@@ -198,19 +178,23 @@ public class TripUtils {
      * Filter out those trips whose first departure time is not inside the time period limited by validFrom and validTo
      * parameters.
      */
-    static List<InternalMessages.TripInfo> filterTripInfos(
-            List<InternalMessages.TripInfo> inputTripInfos, LocalDateTime validFrom, LocalDateTime validTo) {
+    static List<InternalMessages.TripInfo> filterTripInfos(List<InternalMessages.TripInfo> inputTripInfos,
+            LocalDateTime validFrom, LocalDateTime validTo) {
 
         // KEY: date (e.g. "20242901"), VALUE: time (e.g. "1542")
-        AbstractMap.SimpleEntry<String, String> validFromAsSimpleEntry = TimeUtils.convertInto30hClockStrings(validFrom);
+        AbstractMap.SimpleEntry<String, String> validFromAsSimpleEntry = TimeUtils
+                .convertInto30hClockStrings(validFrom);
         AbstractMap.SimpleEntry<String, String> validToAsSimpleEntry = TimeUtils.convertInto30hClockStrings(validTo);
 
-        List<InternalMessages.TripInfo> outputTripInfos = inputTripInfos.stream().filter(tripInfo ->
-                TimeUtils.isBetween(tripInfo.getOperatingDay(), tripInfo.getStartTime(),
-                        validFromAsSimpleEntry, validToAsSimpleEntry)).collect(Collectors.toList());
+        List<InternalMessages.TripInfo> outputTripInfos = inputTripInfos.stream()
+                .filter(tripInfo -> TimeUtils.isBetween(tripInfo.getOperatingDay(), tripInfo.getStartTime(),
+                        validFromAsSimpleEntry, validToAsSimpleEntry))
+                .collect(Collectors.toList());
 
-        log.info("There are {} trip infos after filtering (before filtering {} trip infos). validFrom={}, validTo={}, timeZone={}",
-                outputTripInfos.size(), inputTripInfos.size(), validFrom, validTo, TimeZone.getDefault().getDisplayName());
+        log.info(
+                "There are {} trip infos after filtering (before filtering {} trip infos). validFrom={}, validTo={}, timeZone={}",
+                outputTripInfos.size(), inputTripInfos.size(), validFrom, validTo,
+                TimeZone.getDefault().getDisplayName());
 
         return outputTripInfos;
     }
@@ -224,12 +208,12 @@ public class TripUtils {
      * @param digitransitDeveloperApiUri Digitransit API URL
      * @return trip infos
      */
-    public static List<InternalMessages.TripInfo> getTripInfos(
-            String date, List<String> routeIds, String timezone, String digitransitDeveloperApiUri) {
+    public static List<InternalMessages.TripInfo> getTripInfos(String date, List<String> routeIds, String timezone,
+            String digitransitDeveloperApiUri) {
         List<Route> routes = getRoutes(date, routeIds, digitransitDeveloperApiUri);
-        log.info("Found {} routes (date={}, routeIds={}, digitransitDeveloperApiUri={})",
-                routes.size(), date, routeIds, digitransitDeveloperApiUri.startsWith("https://dev-api.digitransit.fi"));
-        
+        log.info("Found {} routes (date={}, routeIds={}, digitransitDeveloperApiUri={})", routes.size(), date, routeIds,
+                digitransitDeveloperApiUri.startsWith("https://dev-api.digitransit.fi"));
+
         List<InternalMessages.TripInfo> tripInfos = new ArrayList<>();
 
         for (Route route : routes) {
@@ -237,7 +221,7 @@ public class TripUtils {
                 log.info("Route is null or has no trips, skipping");
                 continue;
             }
-            
+
             for (Pattern pattern : route.getPatterns()) {
                 List<TripsForDate> tripsForDate = pattern.getTripsForDate();
                 if (tripsForDate == null) {
@@ -245,16 +229,13 @@ public class TripUtils {
                     continue;
                 }
                 for (TripsForDate trip : tripsForDate) {
-                    String operatingDay = TimeUtils.getDateAsString(trip.getDepartureStoptime().getServiceDay(), timezone);
+                    String operatingDay = TimeUtils.getDateAsString(trip.getDepartureStoptime().getServiceDay(),
+                            timezone);
                     String startTime = TimeUtils.getTimeAsString(trip.getDepartureStoptime().getScheduledDeparture());
-                    
+
                     InternalMessages.TripInfo tripInfo = InternalMessages.TripInfo.newBuilder()
-                            .setRouteId(route.getGtfsId())
-                            .setTripId(trip.getGtfsId())
-                            .setOperatingDay(operatingDay)
-                            .setStartTime(startTime)
-                            .setDirectionId(Integer.parseInt(trip.getDirectionId()))
-                            .build();
+                            .setRouteId(route.getGtfsId()).setTripId(trip.getGtfsId()).setOperatingDay(operatingDay)
+                            .setStartTime(startTime).setDirectionId(Integer.parseInt(trip.getDirectionId())).build();
                     tripInfos.add(tripInfo);
                 }
             }

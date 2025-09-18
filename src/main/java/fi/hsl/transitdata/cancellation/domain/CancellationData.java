@@ -9,7 +9,8 @@ public class CancellationData {
     public final long deviationCaseId;
     private final String tripId; // this is needed only internally in transitdata-cancellation-processor
 
-    public CancellationData(InternalMessages.TripCancellation payload, long timestampEpochMs, String dvjId, long deviationCaseId) {
+    public CancellationData(InternalMessages.TripCancellation payload, long timestampEpochMs, String dvjId,
+            long deviationCaseId) {
         this.payload = payload;
         this.timestampEpochMs = timestampEpochMs;
         this.dvjId = dvjId;
@@ -28,7 +29,7 @@ public class CancellationData {
     public long getTimestamp() {
         return timestampEpochMs;
     }
-    
+
     public String getTripId() {
         return tripId;
     }
