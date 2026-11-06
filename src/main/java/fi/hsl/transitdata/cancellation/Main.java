@@ -13,9 +13,9 @@ import java.io.File;
 import java.util.Scanner;
 
 public class Main {
-    
+
     private static final Logger log = LoggerFactory.getLogger(Main.class);
-    
+
     public static void main(String[] args) {
         log.info("Starting CancellationProcessor");
         Config config = ConfigParser.createConfig();
@@ -23,31 +23,31 @@ public class Main {
         log.info("Using timezone " + timezone);
         try (PulsarApplication app = PulsarApplication.newInstance(config)) {
             String digitransitDeveloperApiUri = getDigitransitDeveloperApiUri();
-            
+
             PulsarApplicationContext context = app.getContext();
             final AlertHandler handler = new AlertHandler(context, timezone, digitransitDeveloperApiUri);
-        
+
             log.info("Start handling the messages");
             app.launchWithHandler(handler);
         } catch (Exception e) {
             log.error("Exception at main", e);
         }
     }
-    
+
     private static String getDigitransitDeveloperApiUri() throws Exception {
         String digitransitDeveloperApiUri;
-        
+
         try {
             digitransitDeveloperApiUri = System.getenv("TRANSITDATA_PUBTRANS_CONN_STRING");
         } catch (Exception e) {
             log.error("Failed to read Digitransit Developer API URI from secrets", e);
             throw e;
         }
-        
+
         if (StringUtils.isBlank(digitransitDeveloperApiUri)) {
             throw new Exception("Failed to find Digitransit Developer API URI, exiting application");
         }
-        
+
         return digitransitDeveloperApiUri;
     }
 }
