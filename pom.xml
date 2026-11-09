@@ -53,7 +53,7 @@
         <dependency>
             <groupId>com.apollographql.apollo</groupId>
             <artifactId>apollo-runtime</artifactId>
-            <version>2.5.14</version>
+            <version>5.0.1</version>
         </dependency>
 
         <dependency>
